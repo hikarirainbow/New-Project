@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://playermain001"]
+
+[ext_resource type="Script" path="res://entities/player/player_main.gd" id="1_main"]
+
+[node name="PlayerMain" type="Node2D" groups=["player_controller"]]
+script = ExtResource("1_main")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
