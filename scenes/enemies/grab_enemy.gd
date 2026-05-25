@@ -44,12 +44,44 @@ func _ready():
 	await get_tree().process_frame
 	player_ref = get_tree().get_first_node_in_group("player")
 
+var is_in_dark: bool = false
+
 func _update_shadow_shroud_material():
 	if has_node("Sprite2D") and $Sprite2D.material is ShaderMaterial:
 		$Sprite2D.material.set_shader_parameter("unlit_alpha", shadow_shroud_unlit_alpha)
 		$Sprite2D.material.set_shader_parameter("unlit_color", shadow_shroud_unlit_color)
+		$Sprite2D.material.set_shader_parameter("is_in_dark", is_in_dark)
+
+func _update_darkness_state():
+	if not player_ref:
+		is_in_dark = true
+		_apply_darkness_shader_param()
+		return
+		
+	var dist = global_position.distance_to(player_ref.global_position)
+	# Player PointLight2D diameter is 768px (radius 384px). We use 360px as conservative light boundary.
+	if dist > 360.0:
+		is_in_dark = true
+	else:
+		# Line-of-sight check using physics raycast against solid tiles (collision mask 1)
+		var space_state = get_world_2d().direct_space_state
+		var query = PhysicsRayQueryParameters2D.create(player_ref.global_position, global_position, 1)
+		var result = space_state.intersect_ray(query)
+		if result:
+			# Ray hit a block, meaning the enemy is behind a wall/tile in shadows
+			is_in_dark = true
+		else:
+			is_in_dark = false
+			
+	_apply_darkness_shader_param()
+
+func _apply_darkness_shader_param():
+	if has_node("Sprite2D") and $Sprite2D.material is ShaderMaterial:
+		$Sprite2D.material.set_shader_parameter("is_in_dark", is_in_dark)
 
 func _physics_process(delta):
+	_update_darkness_state()
+	
 	# Knockback processing (shared from Actor)
 	if knockback_timer > 0.0:
 		knockback_timer -= delta

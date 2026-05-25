@@ -18,6 +18,9 @@ extends Area2D
 		if is_inside_tree():
 			_update_shadow_shroud_material()
 
+var player_ref: Node = null
+var is_in_dark: bool = false
+
 func _ready():
 	# Chỉ kết nối tín hiệu khi đang trong màn chơi chạy thực tế (không phải trong Editor)
 	if not Engine.is_editor_hint():
@@ -34,6 +37,40 @@ func _update_shadow_shroud_material():
 	if self.material is ShaderMaterial:
 		self.material.set_shader_parameter("unlit_alpha", shadow_shroud_unlit_alpha)
 		self.material.set_shader_parameter("unlit_color", shadow_shroud_unlit_color)
+		self.material.set_shader_parameter("is_in_dark", is_in_dark)
+
+func _physics_process(_delta):
+	if Engine.is_editor_hint():
+		return
+		
+	if not player_ref:
+		player_ref = get_tree().get_first_node_in_group("player")
+		
+	_update_darkness_state()
+
+func _update_darkness_state():
+	if not player_ref:
+		is_in_dark = true
+		_apply_darkness_shader_param()
+		return
+		
+	var dist = global_position.distance_to(player_ref.global_position)
+	if dist > 360.0:
+		is_in_dark = true
+	else:
+		var space_state = get_world_2d().direct_space_state
+		var query = PhysicsRayQueryParameters2D.create(player_ref.global_position, global_position, 1)
+		var result = space_state.intersect_ray(query)
+		if result:
+			is_in_dark = true
+		else:
+			is_in_dark = false
+			
+	_apply_darkness_shader_param()
+
+func _apply_darkness_shader_param():
+	if self.material is ShaderMaterial:
+		self.material.set_shader_parameter("is_in_dark", is_in_dark)
 
 func _draw():
 	# Vẽ một hạt đậu đỏ (red bean shape) có kích thước 32x32 (bằng một nửa chiều cao Player)
