@@ -185,8 +185,8 @@ func die():
 	current_state = State.DEAD
 
 	# Remove enemy collision; keep floor collision so corpse doesn't fall through
-	collision_layer = 0
-	collision_mask  = 1
+	set_deferred("collision_layer", 0)
+	set_deferred("collision_mask", 1)
 
 	# Turn gray (corpse visual)
 	if has_node("Sprite2D"):
