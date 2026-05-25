@@ -1,4 +1,4 @@
-extends CharacterBody2D
+extends Actor
 
 # Các thông số di chuyển cơ bản (phù hợp với game platformer 2D)
 const SPEED = 200.0
@@ -6,18 +6,12 @@ const JUMP_VELOCITY = -380.0
 const ACCELERATION = 1000.0
 const FRICTION = 1200.0
 
-# Trọng lực mặc định của Godot
-var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
-
 # Trạng thái nhân vật (FSM)
 enum State { MOVE, GRABBED, DEFEATED, DASH }
 var current_state = State.MOVE
 
-# Hệ thống máu và Debuff
-var max_health = 100
-var current_health = 100
+# Trạng thái suy yếu (Debuff) đặc thù của Player
 var is_debuffed = false
-var knockback_timer = 0.0
 
 # Các thông số của kỹ năng Dash (Lướt nhanh)
 const DASH_SPEED = SPEED * 3.0 # Tốc độ lướt gấp 3 lần bình thường (600 px/s)
@@ -34,8 +28,7 @@ const ATTACK_DURATION = 0.1
 var attack_timer = 0.0
 @onready var attack_area_collision = $AttackArea/CollisionShape2D
 
-# Tín hiệu phát đi khi máu thay đổi hoặc khi chết
-signal health_changed(new_health)
+# Tín hiệu đặc thù phát đi khi người chơi chết
 signal player_defeated
 
 var spawn_point: Vector2
@@ -176,33 +169,11 @@ func handle_defeated_state(delta):
 	velocity.x = 0
 	move_and_slide()
 
-# Nhận sát thương và chịu đẩy lùi
+# Nhận sát thương và chịu đẩy lùi (Ghi đè lớp cha Actor để thêm miễn nhiễm)
 func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 	if current_state == State.DEFEATED or is_invincible:
 		return
-		
-	current_health = max(0, current_health - amount)
-	emit_signal("health_changed", current_health)
-	
-	# Nếu có vị trí nguồn sát thương và chưa chết, áp dụng giật lùi
-	if source_position != Vector2.ZERO and current_health > 0:
-		apply_knockback(source_position)
-	
-	if current_health <= 0:
-		die()
-
-# Áp dụng lực giật lùi
-func apply_knockback(source_position: Vector2, force: float = 250.0):
-	if current_state == State.DEFEATED:
-		return
-	# Tính hướng đẩy lùi ngược lại nguồn gây sát thương
-	var direction = (global_position - source_position).normalized()
-	# Nếu sát thương thẳng đứng, chọn hướng đẩy ngang ngẫu nhiên
-	if abs(direction.x) < 0.1:
-		direction.x = 1.0 if randf() > 0.5 else -1.0
-	velocity.x = direction.x * force
-	velocity.y = -180.0 # Nảy nhẹ lên
-	knockback_timer = 0.25 # Khóa phím trong 0.25 giây
+	super(amount, source_position)
 
 # Đánh bại nhân vật
 func die():
