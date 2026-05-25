@@ -4,73 +4,22 @@ extends Area2D
 # Sát thương kẻ địch tĩnh gây ra
 @export var damage: int = 15
 
-# Cấu hình mặt nạ bóng tối (Shadow Shroud) trực tiếp qua Inspector
+# Cấu hình ngưỡng ánh sáng hiển thị trực tiếp qua Inspector (0.0 = nhạy nhất, 1.0 = tắt)
 @export_group("Shadow Shroud")
-@export_range(0.0, 1.0) var shadow_shroud_unlit_alpha: float = 0.0:
+@export_range(0.0, 1.0) var shadow_shroud_light_threshold: float = 0.05:
 	set(val):
-		shadow_shroud_unlit_alpha = val
+		shadow_shroud_light_threshold = val
 		if is_inside_tree():
 			_update_shadow_shroud_material()
-
-@export var shadow_shroud_unlit_color: Color = Color.BLACK:
-	set(val):
-		shadow_shroud_unlit_color = val
-		if is_inside_tree():
-			_update_shadow_shroud_material()
-
-var player_ref: Node = null
-var is_in_dark: bool = false
 
 func _ready():
 	# Chỉ kết nối tín hiệu khi đang trong màn chơi chạy thực tế (không phải trong Editor)
 	if not Engine.is_editor_hint():
 		body_entered.connect(_on_body_entered)
-		
-		# Áp dụng ShaderMaterial ẩn quái vật trong bóng tối cho kẻ địch tĩnh
-		var shader = load("res://scenes/enemies/enemy_shadow_shroud.gdshader")
-		var mat = ShaderMaterial.new()
-		mat.shader = shader
-		self.material = mat
-		_update_shadow_shroud_material()
 
 func _update_shadow_shroud_material():
 	if self.material is ShaderMaterial:
-		self.material.set_shader_parameter("unlit_alpha", shadow_shroud_unlit_alpha)
-		self.material.set_shader_parameter("unlit_color", shadow_shroud_unlit_color)
-		self.material.set_shader_parameter("is_in_dark", is_in_dark)
-
-func _physics_process(_delta):
-	if Engine.is_editor_hint():
-		return
-		
-	if not player_ref:
-		player_ref = get_tree().get_first_node_in_group("player")
-		
-	_update_darkness_state()
-
-func _update_darkness_state():
-	if not player_ref:
-		is_in_dark = true
-		_apply_darkness_shader_param()
-		return
-		
-	var dist = global_position.distance_to(player_ref.global_position)
-	if dist > 360.0:
-		is_in_dark = true
-	else:
-		var space_state = get_world_2d().direct_space_state
-		var query = PhysicsRayQueryParameters2D.create(player_ref.global_position, global_position, 1)
-		var result = space_state.intersect_ray(query)
-		if result:
-			is_in_dark = true
-		else:
-			is_in_dark = false
-			
-	_apply_darkness_shader_param()
-
-func _apply_darkness_shader_param():
-	if self.material is ShaderMaterial:
-		self.material.set_shader_parameter("is_in_dark", is_in_dark)
+		self.material.set_shader_parameter("light_threshold", shadow_shroud_light_threshold)
 
 func _draw():
 	# Vẽ một hạt đậu đỏ (red bean shape) có kích thước 32x32 (bằng một nửa chiều cao Player)

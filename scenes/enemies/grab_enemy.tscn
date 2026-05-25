@@ -8,7 +8,7 @@ size = Vector2(32, 32)
 
 [node name="GrabEnemy" type="CharacterBody2D"]
 collision_layer = 4
-collision_mask = 3
+collision_mask = 1
 script = ExtResource("1_grab_enemy_gd")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

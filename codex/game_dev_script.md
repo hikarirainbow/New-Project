@@ -1,5 +1,9 @@
 # METRICS & SPECS
 
+## AI Agent Guidelines (IMPORTANT)
+- **Ask the User First**: Whenever a task seems complex, requires long workarounds, or has high ambiguity, stop and ask the user directly instead of searching through massive chat history logs or trying complex recovery processes. The user is here to help and clarify.
+- **Do Not Waste Tokens**: Avoid repetitive commands, excessively long plans, or rebuilding logic from scratch when a simple question to the user can resolve the path immediately.
+
 ## Player
 SPEED: 200.0
 ACCEL: 1000.0
@@ -8,12 +12,12 @@ SIZE: Collision 32x64 | Sprite scale 0.25x0.5 (= 32x64px visual, 2 tiles tall on
 JUMP: -450.0 (~103px apex, hold to jump higher)
 JUMP_STYLE: Smooth variable jump – on release velocity.y *= 0.1 if rising (min jump ~5px)
 GRAVITY_UP: 980. GRAVITY_DOWN: 980*1.5=1470
-HP: max=100, respawn_debuff=-20 (max HP 80). Taking damage triggers invincibility (1.0s) with a visual flashing effect (10Hz). Interrupted state: damage immediately cancels active attack or dash. Knockback: player is locked from moving and pushed away (300px/s horizontal force, -180px/s upward bounce, duration 0.3s). Configurable via Inspector exports.
+HP: max=100, respawn_debuff=-20 (max HP 80). Taking damage triggers invincibility (0.5s) with a visual flashing effect (10Hz). Interrupted state: damage immediately cancels active attack or dash. Knockback: player is locked from moving and pushed away (300px/s horizontal force, -180px/s upward bounce, duration 0.3s). Configurable via Inspector exports.
 DASH: 0.2s (0.18s iframe, 0.02s lerp), CD=0.8s (upgradable 0.4s). Direction locked, sprite faces dash direction, recovery lerps to 0 or same direction. Key=C
 ATTACK: 0.15s duration per strike. 3-hit combo variation. Key=X. Combo reset delay=0.5s after the attack ends (reverts back to Hit 1). Locks direction/input (stops horizontal movement on ground, falls vertically in air). Hitbox shapes:
-- Hit 1: 20x50px in front (blue indicator).
-- Hit 2: 20x50px in front + 50x20px above head (orange/red indicators).
-- Hit 3: 40x20px in front (green indicator).
+- Hit 1: 40x50px in front (blue indicator).
+- Hit 2: 40x50px in front + 70x40px above head (green indicators).
+- Hit 3: 50x30px in front (red indicator).
 
 ## Upgrade Item
 TYPE: Dash CD Halver (Green Circle)
@@ -35,13 +39,13 @@ FLOOR: row 19 (top edge y=608)
 CEILING: row 0
 WALLS: col 0 (left), col 59 (right)
 PLATFORMS: random at rows 16, 13, 10, 7 (4-6 platforms each, width 2-4 tiles, 1 col gap min)
-ENEMIES: GrabEnemy (640,592 → falls to floor)
+ENEMIES: GrabEnemy (640,592 -> falls to floor)
 ITEMS: DashUpgrade (960,592)
 TILE_VISUAL: brown fill Color(0.45,0.26,0.08) + black border 1.5px
-LIGHTING: CanvasModulate Color(0.32, 0.25, 0.42) moderate ambient purple. Player PointLight2D uses a dynamically generated 256x256 radial dithered texture (scaled to 3.0 -> 768px diameter) with smoothstep fall-off and random noise ([-1.5/255, 1.5/255]) to prevent banding. Shadow enabled (PCF5 filter, shadow color 100% black to prevent light from shining into blocks).
-OCCLUDERS: MapTile has LightOccluder2D slightly larger than tile size (33x33px square polygon) to overlap adjacent tile occluders and block light leaks completely.
-BACKGROUND: ColorRect Color(0.18, 0.12, 0.28) dark purple background canvas.
-SPAWNER: Procedural spawner maintaining at least 5 alive GrabEnemies. Spawn positions are ground tiles with empty cells above, >300px away from player.
+LIGHTING: CanvasModulate Color(0.25, 0.18, 0.35) moderate ambient purple. Player PointLight2D uses a 384x384 radial smoothstep texture (scale 2.5 -> 960px diameter) with smooth step fall-off. Shadows are enabled. Tiles are set to light_mask=2 and PointLight2D to range_item_cull_mask=1 to keep tiles completely unlit by the flashlight, while shadow_item_cull_mask=3 and occluder_light_mask=2 allow tiles to cast shadows.
+OCCLUDERS: LightOccluder2D on MapTile with size 32x32px. occluder_light_mask = 2.
+BACKGROUND: ColorRect Color(0.12, 0.08, 0.2) dark purple background canvas.
+SPAWNER: Procedural spawner maintaining at least 5 alive GrabEnemies. Spawn positions are ground tiles with empty cells above, >300px distance threshold.
 
 ## Settings & Save
 SAVE: user://input_config.json
@@ -54,37 +58,10 @@ STYLE: Buttons flat, hover shows StyleBoxFlat border_width_bottom=2px
 ## Changelog
 
 ### 2026-05-25
-- **Dynamic 2D Lighting & Shadows Reversion and Dithering**:
-  - Implemented dynamic dithered noise (`randf_range(-1.5/255.0, 1.5/255.0)`) on the player's radial light texture in GDScript to break up color banding rings without blurring the environment.
-  - Reverted player PointLight2D to use a 256x256 texture size, scaled to `3.0` (768px diameter on screen) for smooth GPU-filtering.
-  - Set `shadow_color` to `Color(0.0, 0.0, 0.0, 1.0)` to ensure light does not shine into blocks.
-  - Resized `LightOccluder2D` to `33x33px` (1px overlap) to prevent light leaks and corner "star" artifacts.
-  - Configured `CanvasModulate` to `Color(0.32, 0.25, 0.42)` and background to `Color(0.18, 0.12, 0.28)` to maintain a moderate, readable ambient brightness instead of pitch-black.
-- **Player Attack Variations (3-Hit Combo System)**:
-  - Implemented a 3-hit combo sequence for player melee attack.
-  - Hit 1: 20x50px rectangle in front of player (Blue indicator).
-  - Hit 2: Dual hitbox - 20x50px in front and 50x20px above player's head (Orange/Red indicators).
-  - Hit 3: 40x20px rectangle in front of player for a long-reach thrust (Green indicator).
-  - Added combo chaining with `combo_reset_timer` of `0.5s` starting immediately when the last attack ends.
-  - Programmatically created a second collision shape under `AttackArea` in `_ready()` to handle the dual hitbox of Hit 2.
-  - Modified `_draw()` to dynamically render the active hitboxes on screen using colors corresponding to each combo hit.
-- **Custom Player Damage Knockback & Invincibility**:
-  - Overrode `apply_knockback()` in `player.gd` to use player-specific physics parameters rather than base actor hardcodings.
-  - Added `@export` parameters to `player.gd` to configure knockback force (`300px/s`), upward bounce (`-180px/s`), lock duration (`0.3s`), and invincibility time (`1.0s`) directly via Godot Inspector.
-  - Implemented an interruption system: taking damage immediately cancels any active attack (calling `end_attack()`) or dash (reverting back to `State.MOVE`).
-  - Added a visual flashing effect on `Sprite2D` (modulating alpha to 0.4 at 10Hz) during the invincibility period.
-  - Ensured invincibility state resolves correctly when dashing starts/ends during active invincibility.
-  - Reset invincibility variables and sprite opacity to normal in `respawn()`.
-- **Pixel-Art Viewport Scaling & Global Fullscreen Toggle**:
-  - Configured project window stretch mode to `"viewport"` with aspect ratio `"keep"`, using a native canvas resolution of `640x360` scaled into a `1280x720` window default to preserve pixel proportions.
-  - Set default canvas texture filtering to `Nearest` in project settings to guarantee pixel-art graphics stay sharp and crisp when scaled or fullscreened.
-  - Added global unhandled key listeners (`F11` and `Alt+Enter`) to `input_manager.gd` (autoload singleton) to toggle window fullscreen/windowed modes globally.
-- **Disabled Player-Enemy Physical Collisions**:
-  - Removed Layer 3 (Enemy) from the Player's collision mask (`collision_mask = 1`) and Layer 2 (Player) from the Enemy's collision mask (`collision_mask = 1`) in `player.tscn` and `grab_enemy.tscn`.
-  - Replaced the physics-based contact damage detection in `grab_enemy.gd` with a custom bounding box overlap check (`dx < 30px` and `dy < 44px`). This ensures that the player and enemy can walk through each other without getting physically blocked, while still correctly applying contact damage and triggering QTE states.
-- **Shadow Shrouding for Enemies (Real-Time Vision Masks)**:
-  - Created a custom CanvasItem shader `res://scenes/enemies/enemy_shadow_shroud.gdshader`.
-  - The shader intercepts vertex colors in `vertex()` and caches them in a `varying vec4` variable to handle both custom node modulating and custom vector drawings in `_draw()`.
-  - In `fragment()`, the base ambient color is replaced with a customizable `unlit_color` (black) and `unlit_alpha` (default `0.0` for completely hidden, but configurable to `1.0` for a solid black silhouette).
-  - In `light()`, the light's `ATTENUATION` (combining distance attenuation and shadows) is used to mathematically interpolate between the dark state and the original fully lit state, producing pixel-perfect clipping at shadow borders.
-  - Implemented `@export` parameters `shadow_shroud_unlit_alpha` (0.0 to 1.0) and `shadow_shroud_unlit_color` in both `grab_enemy.gd` and `static_enemy.gd`. This gives the developer full inspector access to customize the darkness style (invisible vs silhouette).
+- Adjusted PointLight2D to 384x384px smoothstep gradient with scale 2.5 (960px diameter).
+- Configured MapTile with light_mask=2 and LightOccluder2D with occluder_light_mask=2 to block light and cast shadows without being illuminated by player flashlight (range_item_cull_mask=1, shadow_item_cull_mask=3).
+- Implemented 3-hit combo attack variations (X key, 40x50, 40x50+70x40, 50x30 hitboxes) with visual indicators.
+- Disabled player-enemy physical collisions; contact damage checked via bounding box overlaps.
+- Removed GPU-based enemy shadow shroud shader (monsters now render normally under standard Godot lighting).
+- Deferred CollisionShape updates on enemy death to resolve flushing queries error.
+- Deferred key pickup Area2D creation on enemy death using call_deferred() to fix physics flushing query error.

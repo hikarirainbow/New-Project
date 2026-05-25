@@ -23,9 +23,19 @@ var dash_direction = Vector2.ZERO
 var is_invincible = false
 
 # Các thông số của kỹ năng Attack (Tấn công)
-const ATTACK_DURATION = 0.1
+const ATTACK_DURATION = 0.15 # 150ms để hoạt cảnh đánh mượt hơn
 var attack_timer = 0.0
 @onready var attack_area_collision = $AttackArea/CollisionShape2D
+var attack_shape_2: CollisionShape2D # Shape phụ trên đầu cho đòn combo nhịp 2
+var current_combo_index = 0
+var combo_index = 0
+var combo_reset_timer = 0.0
+const COMBO_RESET_DELAY = 0.5 # Thời gian tối đa để bấm nối combo tiếp theo (500ms)
+var bodies_hit_this_attack: Array[Node] = []
+
+# Cấu hình thời gian bất tử khi bị tấn công
+@export var damage_invincibility_duration: float = 0.5
+var invincibility_timer = 0.0
 
 # Tín hiệu đặc thù phát đi khi người chơi chết
 signal player_defeated
@@ -42,6 +52,14 @@ func _ready():
 	spawn_point = global_position
 	if has_node("AttackArea"):
 		$AttackArea.body_entered.connect(_on_attack_body_entered)
+		
+		# Khởi tạo shape phụ cho combo đòn 2 dynamically
+		attack_shape_2 = CollisionShape2D.new()
+		var rect2 = RectangleShape2D.new()
+		attack_shape_2.shape = rect2
+		attack_shape_2.disabled = true
+		$AttackArea.add_child(attack_shape_2)
+		
 	# Ẩn và khóa chuột vào màn hình khi bắt đầu chơi game
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	# Tạo ánh sáng phát sáng cho nhân vật
@@ -60,6 +78,22 @@ func _physics_process(delta):
 		queue_redraw()
 		if attack_timer <= 0.0:
 			end_attack()
+			
+	# Đếm ngược thời gian bất tử và nhấp nháy sprite
+	if invincibility_timer > 0.0:
+		invincibility_timer -= delta
+		if has_node("Sprite2D"):
+			$Sprite2D.modulate.a = 0.4 if Engine.get_frames_drawn() % 10 < 5 else 1.0
+		if invincibility_timer <= 0.0:
+			is_invincible = false
+			if has_node("Sprite2D"):
+				$Sprite2D.modulate.a = 1.0
+			
+	# Đếm ngược thời gian chờ để nối combo tiếp theo
+	if combo_reset_timer > 0.0 and attack_timer <= 0.0:
+		combo_reset_timer -= delta
+		if combo_reset_timer <= 0.0:
+			combo_index = 0 # Reset về nhịp 1 nếu quá thời gian chờ
 		
 	match current_state:
 		State.MOVE:
@@ -203,7 +237,19 @@ func handle_defeated_state(delta):
 func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 	if current_state == State.DEFEATED or is_invincible:
 		return
+		
+	# Ngắt đòn đánh hoặc lướt khi trúng đòn
+	if attack_timer > 0.0:
+		end_attack()
+	if current_state == State.DASH:
+		current_state = State.MOVE
+		
 	super(amount, source_position)
+	
+	# Kích hoạt trạng thái bất tử sau khi nhận sát thương
+	if current_health > 0:
+		is_invincible = true
+		invincibility_timer = damage_invincibility_duration
 
 # Đánh bại nhân vật
 func die():
@@ -230,6 +276,10 @@ func respawn():
 	global_position = spawn_point
 	velocity = Vector2.ZERO
 	knockback_timer = 0.0
+	invincibility_timer = 0.0
+	is_invincible = false
+	if has_node("Sprite2D"):
+		$Sprite2D.modulate.a = 1.0
 	current_health += 9999
 	apply_debuff()
 	current_state = State.MOVE
@@ -245,69 +295,114 @@ func collect_key(key_name: String):
 	emit_signal("key_collected", key_name)
 	print("Key collected: ", key_name, " | Total keys: ", keys)
 
-# Bắt đầu kỹ năng tấn công cận chiến
+# Bắt đầu kỹ năng tấn công cận chiến với cơ chế Combo 3 nhịp biến thiên hình dáng
 func start_attack():
+	current_combo_index = combo_index
 	attack_timer = ATTACK_DURATION
-	if attack_area_collision:
+	combo_reset_timer = 0.0 # Tạm dừng reset timer trong khi đang đánh
+	bodies_hit_this_attack.clear()
+	
+	# Hướng quay mặt của nhân vật
+	var is_facing_left = $Sprite2D.flip_h if has_node("Sprite2D") else false
+	
+	if attack_area_collision and attack_area_collision.shape:
+		# Kích hoạt hitbox chính
 		attack_area_collision.disabled = false
-		# Điều chỉnh vị trí hitbox: cách tâm nhân vật 20px, dài 50px (tức tâm của hình chữ nhật cách nhân vật 20 + 25 = 45px)
-		var is_facing_left = $Sprite2D.flip_h if has_node("Sprite2D") else false
-		attack_area_collision.position.x = -45.0 if is_facing_left else 45.0
+		
+		match current_combo_index:
+			0: # Đòn 1: 40x50 trước mặt
+				attack_area_collision.shape.size = Vector2(40.0, 50.0)
+				attack_area_collision.position.x = -36.0 if is_facing_left else 36.0
+				attack_area_collision.position.y = 0.0
+				if attack_shape_2:
+					attack_shape_2.disabled = true
+					
+			1: # Đòn 2: 40x50 trước mặt và 70x40 trên đầu
+				# Hình trước mặt (40x50)
+				attack_area_collision.shape.size = Vector2(40.0, 50.0)
+				attack_area_collision.position.x = -36.0 if is_facing_left else 36.0
+				attack_area_collision.position.y = 0.0
+				
+				# Hình trên đầu (70x40)
+				if attack_shape_2 and attack_shape_2.shape:
+					attack_shape_2.disabled = false
+					attack_shape_2.shape.size = Vector2(70.0, 40.0)
+					attack_shape_2.position.x = 0.0
+					attack_shape_2.position.y = -52.0
+					
+			2: # Đòn 3: 50x30 trước mặt (đòn đâm/chém xa)
+				attack_area_collision.shape.size = Vector2(50.0, 30.0)
+				attack_area_collision.position.x = -41.0 if is_facing_left else 41.0
+				attack_area_collision.position.y = 0.0
+				if attack_shape_2:
+					attack_shape_2.disabled = true
 	queue_redraw()
 
 # Kết thúc kỹ năng tấn công
 func end_attack():
 	if attack_area_collision:
 		attack_area_collision.disabled = true
+	if attack_shape_2:
+		attack_shape_2.disabled = true
+	
+	# Tiến tới đòn tiếp theo trong combo, reset sau khi đạt tối đa
+	combo_index = (current_combo_index + 1) % 3
+	combo_reset_timer = COMBO_RESET_DELAY
 	queue_redraw()
 
 # Xử lý khi rìa tấn công quét trúng Body của kẻ địch
 func _on_attack_body_entered(body):
-	if body.has_method("take_damage"):
+	if body.has_method("take_damage") and not bodies_hit_this_attack.has(body):
+		bodies_hit_this_attack.append(body)
 		body.take_damage(20, global_position) # Gây 20 sát thương lên kẻ địch
 
-# Vẽ hiệu ứng hitbox màu xanh dương làm chỉ báo visual
+# Vẽ hiệu ứng hitbox chỉ báo visual khác màu nhau cho mỗi nhịp
 func _draw():
-	# Chỉ vẽ khi đang kích hoạt chiêu tấn công
 	if attack_timer > 0.0:
 		var is_facing_left = $Sprite2D.flip_h if has_node("Sprite2D") else false
-		# Nếu quay trái, bắt đầu vẽ từ -70px (cách 20px + dài 50px). Nếu quay phải, bắt đầu từ 20px
-		var x_pos = -70.0 if is_facing_left else 20.0
-		# Vẽ hình chữ nhật màu xanh dương bán trong suốt cao 10px (từ Y = -5 đến 5)
-		draw_rect(Rect2(x_pos, -5.0, 50.0, 10.0), Color(0.15, 0.15, 0.85, 0.6))
+		match current_combo_index:
+			0: # Đòn 1: Vẽ hình chữ nhật màu xanh dương 40x50
+				var x_pos = -56.0 if is_facing_left else 16.0
+				draw_rect(Rect2(x_pos, -25.0, 40.0, 50.0), Color(0.15, 0.15, 0.85, 0.6))
+			1: # Đòn 2: Vẽ hình trước mặt và trên đầu màu xanh lá
+				var x_pos = -56.0 if is_facing_left else 16.0
+				draw_rect(Rect2(x_pos, -25.0, 40.0, 50.0), Color(0.15, 0.85, 0.15, 0.6))
+				draw_rect(Rect2(-35.0, -52.0, 70.0, 40.0), Color(0.15, 0.85, 0.15, 0.6))
+			2: # Đòn 3: Vẽ hình 50x30 màu đỏ
+				var x_pos = -66.0 if is_facing_left else 16.0
+				draw_rect(Rect2(x_pos, -15.0, 50.0, 30.0), Color(0.85, 0.15, 0.15, 0.6))
 
-# Thiết lập PointLight2D — 4 điểm cubic, texture 1024px, không banding
+# Thiết lập PointLight2D phát sáng
 func _setup_player_light():
 	var light = PointLight2D.new()
 	light.name = "PlayerLight"
 	
-	# Chỉ dùng 4 điểm kiểm soát — Godot cubic interpolation sẽ tạo đường cong mịn hoàn toàn
+	# Tạo texture dạng hình tròn chuyển sắc mịn màng (smoothstep) từ trắng sang trong suốt
 	var gradient = Gradient.new()
-	gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CUBIC
+	gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_LINEAR
 	
-	# Điểm 0: Tâm sáng trắng hoàn toàn
 	gradient.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
-	# Điểm 1: Rìa ngoài cùng — hòa vào nền tím, hoàn toàn trong suốt
-	gradient.set_color(1, Color(0.25, 0.18, 0.35, 0.0))
+	gradient.set_color(1, Color(1.0, 1.0, 1.0, 0.0))
 	
-	# Điểm 2 (t=0.4): Vẫn còn sáng mạnh — giữ vùng sáng rộng
-	gradient.add_point(0.4, Color(1.0, 1.0, 1.0, 0.85))
-	# Điểm 3 (t=0.75): Bắt đầu pha tím, mờ dần tự nhiên
-	gradient.add_point(0.75, Color(0.55, 0.42, 0.65, 0.2))
+	# Sinh các điểm trung gian tạo đường cong mờ dần tự nhiên theo khoảng cách
+	for i in range(1, 10):
+		var t = i / 10.0
+		var alpha = 1.0 - (3.0 * t * t - 2.0 * t * t * t)
+		gradient.add_point(t, Color(1.0, 1.0, 1.0, alpha))
 	
 	var grad_tex = GradientTexture2D.new()
 	grad_tex.gradient = gradient
 	grad_tex.fill = GradientTexture2D.FILL_RADIAL
 	grad_tex.fill_from = Vector2(0.5, 0.5)
 	grad_tex.fill_to = Vector2(1.0, 0.5)
-	grad_tex.width = 1024  # Texture lớn hơn = chuyển sắc mịn hơn, không bị banding
-	grad_tex.height = 1024
+	grad_tex.width = 384
+	grad_tex.height = 384
 	
 	light.texture = grad_tex
-	light.texture_scale = 1.5  # Phóng to tầm nhìn thêm 50%
+	light.texture_scale = 2.5  # Tầm nhìn lớn gấp 2.5 lần hiện tại
 	light.shadow_enabled = true
-	light.shadow_filter = PointLight2D.SHADOW_FILTER_PCF13
-	light.shadow_filter_smooth = 2.0
+	light.shadow_filter = PointLight2D.SHADOW_FILTER_PCF5
 	light.shadow_color = Color(0, 0, 0, 0.7)
+	light.range_item_cull_mask = 1  # Chỉ chiếu sáng thực thể ở Layer 1 (Player, Enemy, BG)
+	light.shadow_item_cull_mask = 3  # Đổ bóng từ cả Layer 1 và Layer 2 (MapTile)
 	add_child(light)
-

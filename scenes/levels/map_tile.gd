@@ -12,8 +12,12 @@ func _ready() -> void:
 	shape.shape     = rect_shape
 	add_child(shape)
 
+	# Set light_mask to 2 (Layer 2) so the tile is not illuminated by the player's PointLight2D (which only illuminates Layer 1)
+	light_mask = 2
+
 	# Light occluder for dynamic 2D shadows
 	var occluder = LightOccluder2D.new()
+	occluder.occluder_light_mask = 2 # Match shadow cull mask Layer 2 to cast shadows
 	var poly = OccluderPolygon2D.new()
 	var h := SIZE * 0.5
 	poly.polygon = PackedVector2Array([
@@ -25,9 +29,11 @@ func _ready() -> void:
 	occluder.occluder = poly
 	add_child(occluder)
 
+
 func _draw() -> void:
 	var h := SIZE * 0.5
 	# Brown earth fill
 	draw_rect(Rect2(-h, -h, SIZE, SIZE), Color(0.45, 0.26, 0.08))
 	# Black border
 	draw_rect(Rect2(-h, -h, SIZE, SIZE), Color(0.05, 0.05, 0.05), false, 1.5)
+
