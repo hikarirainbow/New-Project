@@ -12,6 +12,7 @@ var solid_cells := {}
 
 func _ready() -> void:
 	rng.randomize()
+	_setup_background()
 	_setup_darkness()
 	_build_map()
 	_setup_camera_limits()
@@ -22,8 +23,16 @@ func _physics_process(_delta: float) -> void:
 # ── AMBIENT DARKNESS ─────────────────────────────────────────────────────────
 func _setup_darkness() -> void:
 	var canvas_modulate = CanvasModulate.new()
-	canvas_modulate.color = Color(0.08, 0.08, 0.12) # Tối đen với ánh xanh dương nhẹ
+	canvas_modulate.color = Color(0.25, 0.18, 0.35) # Môi trường tối màu tím nhẹ dịu mắt, tránh đen kịt
 	add_child(canvas_modulate)
+
+func _setup_background() -> void:
+	var bg = ColorRect.new()
+	bg.name = "Background"
+	bg.color = Color(0.12, 0.08, 0.2) # Nền màu tím đậm tạm thời
+	bg.size = Vector2(COLS * TILE, ROWS * TILE)
+	bg.z_index = -10 # Đặt ở phía sau tất cả các tile và thực thể
+	add_child(bg)
 
 # ── TILE PLACEMENT ──────────────────────────────────────────────────────────
 func _place(col: int, row: int) -> void:

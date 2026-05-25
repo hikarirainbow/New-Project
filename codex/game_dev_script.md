@@ -33,8 +33,9 @@ PLATFORMS: random at rows 16, 13, 10, 7 (4-6 platforms each, width 2-4 tiles, 1 
 ENEMIES: GrabEnemy (640,592 → falls to floor)
 ITEMS: DashUpgrade (960,592)
 TILE_VISUAL: brown fill Color(0.45,0.26,0.08) + black border 1.5px
-LIGHTING: CanvasModulate Color(0.08, 0.08, 0.12) ambient darkness. Player PointLight2D 384px radial, shadow enabled (PCF5 filter, shadow color 95% black).
+LIGHTING: CanvasModulate Color(0.25, 0.18, 0.35) soft purple ambient darkness. Player PointLight2D 384px radial, shadow enabled (PCF5 filter, shadow color 70% black).
 OCCLUDERS: MapTile has LightOccluder2D (32x32px square polygon) casting shadows.
+BACKGROUND: ColorRect Color(0.12, 0.08, 0.2) deep purple background canvas.
 SPAWNER: Procedural spawner maintaining at least 5 alive GrabEnemies. Spawn positions are ground tiles with empty cells above, >300px away from player.
 
 ## Settings & Save

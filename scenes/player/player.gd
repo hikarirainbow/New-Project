@@ -297,5 +297,5 @@ func _setup_player_light():
 	light.texture = grad_tex
 	light.shadow_enabled = true
 	light.shadow_filter = PointLight2D.SHADOW_FILTER_PCF5
-	light.shadow_color = Color(0, 0, 0, 0.95)
+	light.shadow_color = Color(0, 0, 0, 0.7)
 	add_child(light)
