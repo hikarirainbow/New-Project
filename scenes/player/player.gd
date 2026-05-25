@@ -17,6 +17,7 @@ var current_state = State.MOVE
 var max_health = 100
 var current_health = 100
 var is_debuffed = false
+var knockback_timer = 0.0
 
 # Tín hiệu phát đi khi máu thay đổi hoặc khi chết
 signal health_changed(new_health)
@@ -26,6 +27,8 @@ func _ready():
 	add_to_group("player")
 
 func _physics_process(delta):
+	if knockback_timer > 0.0:
+		knockback_timer -= delta
 	match current_state:
 		State.MOVE:
 			handle_move_state(delta)
@@ -41,6 +44,12 @@ func handle_move_state(delta):
 		# Nếu nhân vật đang rơi xuống, tăng trọng lực để rơi nhanh hơn (giúp nhảy có cảm giác nặng hơn)
 		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
 		velocity.y += active_gravity * delta
+
+	# Nếu đang chịu lực giật lùi (knockback), khóa phím điều khiển và giảm tốc dần
+	if knockback_timer > 0.0:
+		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+		move_and_slide()
+		return
 
 	# Nhảy
 	if Input.is_action_just_pressed("jump") and is_on_floor():
@@ -73,16 +82,33 @@ func handle_defeated_state(delta):
 	velocity.x = 0
 	move_and_slide()
 
-# Nhận sát thương
-func take_damage(amount: int):
+# Nhận sát thương và chịu đẩy lùi
+func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 	if current_state == State.DEFEATED:
 		return
 		
 	current_health = max(0, current_health - amount)
 	emit_signal("health_changed", current_health)
 	
+	# Nếu có vị trí nguồn sát thương và chưa chết, áp dụng giật lùi
+	if source_position != Vector2.ZERO and current_health > 0:
+		apply_knockback(source_position)
+	
 	if current_health <= 0:
 		die()
+
+# Áp dụng lực giật lùi
+func apply_knockback(source_position: Vector2, force: float = 250.0):
+	if current_state == State.DEFEATED:
+		return
+	# Tính hướng đẩy lùi ngược lại nguồn gây sát thương
+	var direction = (global_position - source_position).normalized()
+	# Nếu sát thương thẳng đứng, chọn hướng đẩy ngang ngẫu nhiên
+	if abs(direction.x) < 0.1:
+		direction.x = 1.0 if randf() > 0.5 else -1.0
+	velocity.x = direction.x * force
+	velocity.y = -180.0 # Nảy nhẹ lên
+	knockback_timer = 0.25 # Khóa phím trong 0.25 giây
 
 # Đánh bại nhân vật
 func die():

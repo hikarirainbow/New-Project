@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://b2e7h8d3p5"]
+
+[ext_resource type="Script" path="res://scenes/enemies/static_enemy.gd" id="1_static_enemy_gd"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_enemy"]
+radius = 16.0
+height = 32.0
+
+[node name="StaticEnemy" type="Area2D"]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_static_enemy_gd")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_enemy")
