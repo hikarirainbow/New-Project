@@ -1,6 +1,7 @@
-[gd_scene format=3 uid="uid://d1h7h8d3p3"]
+[gd_scene load_steps=5 format=3 uid="uid://d1h7h8d3p3"]
 
 [ext_resource type="PackedScene" uid="uid://c1y7h8d3p2" path="res://scenes/player/player.tscn" id="1_player_tscn"]
+[ext_resource type="PackedScene" uid="uid://d1u7h8d3p4" path="res://scenes/ui/hud.tscn" id="2_hud_tscn"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(1200, 40)
@@ -9,6 +10,8 @@ size = Vector2(1200, 40)
 size = Vector2(40, 400)
 
 [node name="SandboxLevel" type="Node2D"]
+
+[node name="HUD" parent="." instance=ExtResource("2_hud_tscn")]
 
 [node name="Player" parent="." instance=ExtResource("1_player_tscn")]
 position = Vector2(600, 300)

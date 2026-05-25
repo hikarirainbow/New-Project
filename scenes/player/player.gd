@@ -22,6 +22,9 @@ var is_debuffed = false
 signal health_changed(new_health)
 signal player_defeated
 
+func _ready():
+	add_to_group("player")
+
 func _physics_process(delta):
 	match current_state:
 		State.MOVE:
