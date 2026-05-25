@@ -138,5 +138,6 @@ func respawn():
 	global_position = spawn_point
 	velocity = Vector2.ZERO
 	knockback_timer = 0.0
+	current_health += 9999
 	apply_debuff()
 	current_state = State.MOVE
