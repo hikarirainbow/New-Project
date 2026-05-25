@@ -63,9 +63,9 @@ func setup_remap_buttons():
 		# Tạo nhãn Label hiển thị tên phím (ví dụ: Move Left)
 		var label = Label.new()
 		label.text = action.replace("_", " ").capitalize()
-		label.theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-		label.theme_override_constants/outline_size = 4
-		label.theme_override_font_sizes/font_size = 14
+		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		label.add_theme_constant_override("outline_size", 4)
+		label.add_theme_font_size_override("font_size", 14)
 		remap_container.add_child(label)
 		
 		# Tạo nút bấm Button để nhấp đổi phím
