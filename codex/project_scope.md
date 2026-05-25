@@ -9,6 +9,8 @@ CONTROLS:
 
 STATUS:
 - Walk/Jump/Gravity: DONE
+- Variable Jump Height (Hollow Knight style, 128-220px, JUMP_MAX=-657, JUMP_CUT=-501): DONE
+- Player Resize (64x128px, 2-tile collision 48x120): DONE
 - Dash (0.2s, 0.18s iframe, 0.02s lerp, 0.8s CD): DONE
 - Physics Layers: L1=Env, L2=Player, L3=Enemy, L4=Hitbox, L8=Item
 - HP (100 HP max, HUD bar Tween): DONE
@@ -21,4 +23,7 @@ STATUS:
 - Player Key Inventory (keys[], collect_key(), key_collected signal): DONE
 - HUD Key Display (KeyLabel, shows collected keys): DONE
 - Wall Slide/Jump: PLANNED
-- Sandbox (Platforms, Red Bean, Patrol/Chase Enemy, Dash Upgrade): DONE
+- Sandbox (Procedural 20x13 grid, 64x64 tiles brown/black, floor/ceiling/walls/3 platform rows): DONE
+- Red Bean Static Enemy: DONE
+- Patrol/Chase/Corpse Enemy: DONE
+- Dash Upgrade Item: DONE

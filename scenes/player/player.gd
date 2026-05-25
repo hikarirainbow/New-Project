@@ -1,9 +1,10 @@
 extends Actor
 
 # Các thông số di chuyển cơ bản (phù hợp với game platformer 2D)
-const SPEED = 200.0
-const JUMP_VELOCITY = -380.0
-const ACCELERATION = 1000.0
+const SPEED           = 200.0
+const JUMP_VELOCITY_MAX  = -657.0  # 220 px apex  (sqrt(2*980*220))
+const JUMP_CUT_VELOCITY  = -501.0  # 128 px apex  (sqrt(2*980*128))
+const ACCELERATION    = 1000.0
 
 # Trạng thái nhân vật (FSM)
 enum State { MOVE, GRABBED, DEFEATED, DASH }
@@ -87,15 +88,19 @@ func handle_move_state(delta):
 		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
 		velocity.y += active_gravity * delta
 
+	# Variable jump height: nếu nhả phím jump sớm trong khi đang bay lên, giới hạn vận tốc lên trên
+	if not is_on_floor() and not Input.is_action_pressed("jump") and velocity.y < JUMP_CUT_VELOCITY:
+		velocity.y = JUMP_CUT_VELOCITY
+
 	# Nếu đang chịu lực giật lùi (knockback), khóa phím điều khiển và giảm tốc dần
 	if knockback_timer > 0.0:
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
 		move_and_slide()
 		return
 
-	# Nhảy
+	# Nhảy (sử dụng lực tối đa — phả phím sớm để nhảy thấp hơn)
 	if Input.is_action_just_pressed("jump") and is_on_floor():
-		velocity.y = JUMP_VELOCITY
+		velocity.y = JUMP_VELOCITY_MAX
 
 	# Lấy hướng nhập từ bàn phím A/D hoặc Trái/Phải
 	var direction = Input.get_axis("move_left", "move_right")

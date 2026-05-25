@@ -4,11 +4,14 @@
 SPEED: 200.0
 ACCEL: 1000.0
 FRICTION: 1200.0 (Actor)
-JUMP: -380.0
-GRAVITY: 980 * 1.5
+SIZE: Collision 48x120 | Sprite scale 0.5x1.0 (= 64x128px visual, 2 tiles tall)
+JUMP_MAX: -657.0  (apex 220px = 3.4 tiles, hold full duration)
+JUMP_CUT: -501.0  (apex 128px = 2 tiles, release early)
+JUMP_STYLE: Hollow Knight variable – on press give JUMP_MAX; if !held && velocity.y < JUMP_CUT, clamp to JUMP_CUT
+GRAVITY_UP: 980. GRAVITY_DOWN: 980*1.5=1470
 HP: max=100, respawn_debuff=-20 (max HP 80)
-DASH: 0.2s duration (0.18s active & is_invincible=true, 0.02s recovery with velocity lerp). CD=0.8s (upgradable to 0.4s). Key=C
-ATTACK: 0.1s duration. Hitbox 50x10 Area2D, offset 20px front (X center = +/-45px relative to Player). Blue rect indicator. Key=X
+DASH: 0.2s (0.18s iframe, 0.02s lerp), CD=0.8s (upgradable 0.4s). Key=C
+ATTACK: 0.1s, Hitbox 50x10 Area2D offset 20px front. Blue rect indicator. Key=X
 
 ## Upgrade Item
 TYPE: Dash CD Halver (Green Circle)
@@ -21,10 +24,16 @@ STATE: GRABBED (locks input) -> QTE UI (Space/E spam)
 SUCCESS: pushback, heal minor, resume play
 FAILURE: DEFEATED state -> fade out (0.5s) -> relocate to spawn_point -> heal (+9999) -> apply debuff -> fade in (0.5s)
 
-## Level Design
-FLOOR: 1200x40 at Y=500
-RED_BEAN (Static Enemy): POS (400, 464). Contact damage 15. Logs hit.
-GRAB_PATROL (Patrol Enemy): raycast wall/cliff check, turns back. Contact damage, logs hit.
+## Level Design (Sandbox)
+GRID: 64x64 tile
+MAP: 20 cols x 13 rows (1280x832 px)
+FLOOR: row 12 (top edge y=768)
+CEILING: row 0
+WALLS: col 0 (left), col 19 (right)
+PLATFORMS: random at rows 9, 6, 3 (2-3 platforms each, width 2-4 tiles, 1 col gap min)
+ENEMIES: StaticEnemy (384,752), GrabEnemy (640,700 → falls to floor)
+ITEMS: DashUpgrade (960,752)
+TILE_VISUAL: brown fill Color(0.45,0.26,0.08) + black border 1.5px
 
 ## Settings & Save
 SAVE: user://input_config.json
