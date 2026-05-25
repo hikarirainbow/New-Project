@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://4q335xxs2p" path="res://icon.svg" id="2_player_icon"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
-size = Vector2(28, 54)
+size = Vector2(28, 56)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
 size = Vector2(50, 10)
@@ -19,7 +19,7 @@ scale = Vector2(0.25, 0.5)
 texture = ExtResource("2_player_icon")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1328839108]
-position = Vector2(0, 5)
+position = Vector2(0, 4)
 shape = SubResource("RectangleShape2D_player")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=175367551]

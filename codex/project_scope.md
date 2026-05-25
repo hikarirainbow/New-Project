@@ -16,7 +16,7 @@ STATUS:
 - Physics Layers: L1=Env, L2=Player, L3=Enemy, L4=Hitbox, L8=Item
 - HP (100 HP max, HUD bar Tween): DONE
 - Respawn (Fade 0.5s, restore +9999 HP, debuff max HP to 80): DONE
-- Melee (X, 0.1s, 50x10 at 20px offset, body hit detection, blue visual): DONE
+- Melee (X, 0.1s, 50x10 at 20px offset, body hit detection, locked direction/input, stops on ground, falls in air, blue visual): DONE
 - Knockback (0.25s lock): DONE
 - Dash Item (Green, Y=592, CD -> 0.4s): DONE
 - Grab Enemy (PATROL/CHASE/DEAD states, raycast cliff/wall, 100px chase radius, wall-jump, CORPSE→Key pickup): DONE

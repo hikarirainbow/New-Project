@@ -71,6 +71,16 @@ func _physics_process(delta):
 
 # Logic trạng thái di chuyển tự do
 func handle_move_state(delta):
+	# Nếu đang tấn công, khóa điều khiển/hướng và dừng lại trên mặt đất
+	if attack_timer > 0.0:
+		if is_on_floor():
+			velocity.x = 0.0
+		if not is_on_floor():
+			var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
+			velocity.y += active_gravity * delta
+		move_and_slide()
+		return
+
 	# Kích hoạt Tấn công khi nhấn phím X (nút 'attack') và không đang tấn công
 	if Input.is_action_just_pressed("attack") and attack_timer <= 0.0:
 		start_attack()
