@@ -10,7 +10,7 @@ const FRICTION = 1200.0
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 # Trạng thái nhân vật (FSM)
-enum State { MOVE, GRABBED, DEFEATED }
+enum State { MOVE, GRABBED, DEFEATED, DASH }
 var current_state = State.MOVE
 
 # Hệ thống máu và Debuff
@@ -18,6 +18,16 @@ var max_health = 100
 var current_health = 100
 var is_debuffed = false
 var knockback_timer = 0.0
+
+# Các thông số của kỹ năng Dash (Lướt nhanh)
+const DASH_SPEED = SPEED * 3.0 # Tốc độ lướt gấp 3 lần bình thường (600 px/s)
+const DASH_DURATION = 0.5 # Tổng thời gian lướt
+const DASH_ACTIVE_DURATION = 0.45 # 9/10 thời gian đầu (0.45s) là lướt chủ động & miễn sát thương
+const DASH_COOLDOWN = 0.8 # Thời gian hồi chiêu
+var dash_timer = 0.0
+var dash_cooldown_timer = 0.0
+var dash_direction = Vector2.ZERO
+var is_invincible = false
 
 # Tín hiệu phát đi khi máu thay đổi hoặc khi chết
 signal health_changed(new_health)
@@ -30,8 +40,13 @@ func _ready():
 	spawn_point = global_position
 
 func _physics_process(delta):
+	# Giảm thời gian hồi chiêu lướt
+	if dash_cooldown_timer > 0.0:
+		dash_cooldown_timer -= delta
+		
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
+		
 	match current_state:
 		State.MOVE:
 			handle_move_state(delta)
@@ -39,9 +54,16 @@ func _physics_process(delta):
 			handle_grabbed_state(delta)
 		State.DEFEATED:
 			handle_defeated_state(delta)
+		State.DASH:
+			handle_dash_state(delta)
 
 # Logic trạng thái di chuyển tự do
 func handle_move_state(delta):
+	# Kích hoạt Dash (lướt nhanh) khi nhấn Shift (nút 'dash') và hết thời gian hồi chiêu
+	if Input.is_action_just_pressed("dash") and dash_cooldown_timer <= 0.0:
+		start_dash()
+		return
+
 	# Áp dụng trọng lực
 	if not is_on_floor():
 		# Nếu nhân vật đang rơi xuống, tăng trọng lực để rơi nhanh hơn (giúp nhảy có cảm giác nặng hơn)
@@ -72,6 +94,57 @@ func handle_move_state(delta):
 
 	move_and_slide()
 
+# Bắt đầu trạng thái Dash
+func start_dash():
+	current_state = State.DASH
+	dash_timer = 0.0
+	dash_cooldown_timer = DASH_COOLDOWN
+	
+	# Xác định hướng lướt dựa trên phím di chuyển đang giữ
+	var dir = Input.get_axis("move_left", "move_right")
+	if dir == 0.0:
+		# Nếu không giữ nút di chuyển nào, lướt theo hướng nhân vật đang quay mặt
+		dir = -1.0 if (has_node("Sprite2D") and $Sprite2D.flip_h) else 1.0
+	
+	dash_direction = Vector2(dir, 0.0).normalized()
+	velocity.x = dash_direction.x * DASH_SPEED
+	velocity.y = 0.0 # Khóa vận tốc nhảy/rơi theo phương dọc khi đang lướt chủ động
+	is_invincible = true
+
+# Xử lý logic trạng thái lướt (DASH)
+func handle_dash_state(delta):
+	dash_timer += delta
+	
+	if dash_timer < DASH_ACTIVE_DURATION:
+		# 9/10 đoạn đầu: Di chuyển nhanh tối đa & Miễn sát thương
+		velocity.x = dash_direction.x * DASH_SPEED
+		velocity.y = 0.0
+		is_invincible = true
+	elif dash_timer < DASH_DURATION:
+		# 1/10 đoạn cuối: Giảm tốc độ mượt mà về tốc độ gốc và mất miễn sát thương
+		is_invincible = false
+		
+		# Lấy tốc độ đích sau khi kết thúc lướt (tùy vào phím bấm hiện tại của người chơi)
+		var target_speed = Input.get_axis("move_left", "move_right") * SPEED
+		
+		# Tính toán tỷ lệ phần trăm tiến trình trong đoạn cuối (0.0 đến 1.0)
+		var recovery_time_passed = dash_timer - DASH_ACTIVE_DURATION
+		var total_recovery_time = DASH_DURATION - DASH_ACTIVE_DURATION # 0.05s
+		var t = recovery_time_passed / total_recovery_time
+		
+		# Nội suy tuyến tính (Lerp) vận tốc ngang từ tốc độ lướt về tốc độ mục tiêu
+		velocity.x = lerp(dash_direction.x * DASH_SPEED, target_speed, t)
+		
+		# Áp dụng trọng lực trở lại để tránh lơ lửng không tự nhiên
+		if not is_on_floor():
+			velocity.y += gravity * delta
+	else:
+		# Kết thúc thời gian lướt: quay về trạng thái di chuyển thường
+		is_invincible = false
+		current_state = State.MOVE
+		
+	move_and_slide()
+
 # Logic khi bị khống chế (Grabbed)
 func handle_grabbed_state(delta):
 	# Dừng mọi chuyển động vật lý, quái vật sẽ kéo hoặc đè Player
@@ -87,7 +160,7 @@ func handle_defeated_state(delta):
 
 # Nhận sát thương và chịu đẩy lùi
 func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
-	if current_state == State.DEFEATED:
+	if current_state == State.DEFEATED or is_invincible:
 		return
 		
 	current_health = max(0, current_health - amount)
