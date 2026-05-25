@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://d1u7h8d3p4"]
+[gd_scene format=3 uid="uid://d1u7h8d3p4"]
 
 [ext_resource type="Script" path="res://scenes/ui/hud.gd" id="1_hud_gd"]
 
@@ -63,3 +63,13 @@ theme_override_styles/background = SubResource("StyleBoxFlat_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
 value = 100.0
 show_percentage = false
+
+[node name="ScreenFade" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)

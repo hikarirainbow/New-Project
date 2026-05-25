@@ -23,8 +23,11 @@ var knockback_timer = 0.0
 signal health_changed(new_health)
 signal player_defeated
 
+var spawn_point: Vector2
+
 func _ready():
 	add_to_group("player")
+	spawn_point = global_position
 
 func _physics_process(delta):
 	if knockback_timer > 0.0:
@@ -129,3 +132,11 @@ func remove_debuff():
 	max_health = 100
 	current_health = max_health
 	emit_signal("health_changed", current_health)
+
+# Hồi sinh nhân vật về điểm spawn ban đầu
+func respawn():
+	global_position = spawn_point
+	velocity = Vector2.ZERO
+	knockback_timer = 0.0
+	apply_debuff()
+	current_state = State.MOVE
