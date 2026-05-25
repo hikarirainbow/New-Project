@@ -276,23 +276,41 @@ func _draw():
 		# Vẽ hình chữ nhật màu xanh dương bán trong suốt cao 10px (từ Y = -5 đến 5)
 		draw_rect(Rect2(x_pos, -5.0, 50.0, 10.0), Color(0.15, 0.15, 0.85, 0.6))
 
-# Thiết lập PointLight2D phát sáng
+# Thiết lập PointLight2D phát sáng với thuật toán Smoothstep
 func _setup_player_light():
 	var light = PointLight2D.new()
 	light.name = "PlayerLight"
 	
-	# Tạo texture dạng hình tròn chuyển sắc từ trắng sang trong suốt
 	var gradient = Gradient.new()
-	gradient.add_point(0.0, Color(1.0, 1.0, 1.0, 1.0))
-	gradient.add_point(1.0, Color(1.0, 1.0, 1.0, 0.0))
+	gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CUBIC
+	
+	# Thiết lập 2 điểm biên trước
+	gradient.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
+	gradient.set_color(1, Color(0.25, 0.18, 0.35, 0.0)) # Hòa vào màu tím của CanvasModulate ở rìa
+	
+	# Thuật toán sinh điểm trung gian tạo đường cong Smoothstep (3t^2 - 2t^3)
+	for i in range(1, 10):
+		var t = i / 10.0
+		var factor = 1.0 - (3.0 * (t * t) - 2.0 * (t * t * t))
+		var color = Color(1.0, 1.0, 1.0, factor)
+		if t > 0.5:
+			# Pha trộn màu tím ở nửa ngoài tầm nhìn để chuyển sắc tự nhiên hơn
+			var blend_ratio = (t - 0.5) * 2.0
+			color = Color(
+				lerp(1.0, 0.25, blend_ratio),
+				lerp(1.0, 0.18, blend_ratio),
+				lerp(1.0, 0.35, blend_ratio),
+				factor
+			)
+		gradient.add_point(t, color)
 	
 	var grad_tex = GradientTexture2D.new()
 	grad_tex.gradient = gradient
 	grad_tex.fill = GradientTexture2D.FILL_RADIAL
 	grad_tex.fill_from = Vector2(0.5, 0.5)
 	grad_tex.fill_to = Vector2(1.0, 0.5)
-	grad_tex.width = 384
-	grad_tex.height = 384
+	grad_tex.width = 600 # Tầm nhìn lớn hơn (600px)
+	grad_tex.height = 600
 	
 	light.texture = grad_tex
 	light.shadow_enabled = true
