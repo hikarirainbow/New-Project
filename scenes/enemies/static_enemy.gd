@@ -4,10 +4,36 @@ extends Area2D
 # Sát thương kẻ địch tĩnh gây ra
 @export var damage: int = 15
 
+# Cấu hình mặt nạ bóng tối (Shadow Shroud) trực tiếp qua Inspector
+@export_group("Shadow Shroud")
+@export_range(0.0, 1.0) var shadow_shroud_unlit_alpha: float = 0.0:
+	set(val):
+		shadow_shroud_unlit_alpha = val
+		if is_inside_tree():
+			_update_shadow_shroud_material()
+
+@export var shadow_shroud_unlit_color: Color = Color.BLACK:
+	set(val):
+		shadow_shroud_unlit_color = val
+		if is_inside_tree():
+			_update_shadow_shroud_material()
+
 func _ready():
 	# Chỉ kết nối tín hiệu khi đang trong màn chơi chạy thực tế (không phải trong Editor)
 	if not Engine.is_editor_hint():
 		body_entered.connect(_on_body_entered)
+		
+		# Áp dụng ShaderMaterial ẩn quái vật trong bóng tối cho kẻ địch tĩnh
+		var shader = load("res://scenes/enemies/enemy_shadow_shroud.gdshader")
+		var mat = ShaderMaterial.new()
+		mat.shader = shader
+		self.material = mat
+		_update_shadow_shroud_material()
+
+func _update_shadow_shroud_material():
+	if self.material is ShaderMaterial:
+		self.material.set_shader_parameter("unlit_alpha", shadow_shroud_unlit_alpha)
+		self.material.set_shader_parameter("unlit_color", shadow_shroud_unlit_color)
 
 func _draw():
 	# Vẽ một hạt đậu đỏ (red bean shape) có kích thước 32x32 (bằng một nửa chiều cao Player)

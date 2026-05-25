@@ -15,11 +15,39 @@ var player_ref: Node = null
 @onready var edge_left   = $RayCast2D_EdgeLeft
 @onready var wall_ray    = $RayCast2D_Wall
 
+# Cấu hình mặt nạ bóng tối (Shadow Shroud) trực tiếp qua Inspector
+@export_group("Shadow Shroud")
+@export_range(0.0, 1.0) var shadow_shroud_unlit_alpha: float = 0.0:
+	set(val):
+		shadow_shroud_unlit_alpha = val
+		if is_inside_tree():
+			_update_shadow_shroud_material()
+
+@export var shadow_shroud_unlit_color: Color = Color.BLACK:
+	set(val):
+		shadow_shroud_unlit_color = val
+		if is_inside_tree():
+			_update_shadow_shroud_material()
+
 func _ready():
 	add_to_group("enemies")
+	
+	# Khởi tạo ShaderMaterial ẩn quái vật trong bóng tối
+	if has_node("Sprite2D"):
+		var shader = load("res://scenes/enemies/enemy_shadow_shroud.gdshader")
+		var mat = ShaderMaterial.new()
+		mat.shader = shader
+		$Sprite2D.material = mat
+		_update_shadow_shroud_material()
+		
 	# Cache player reference once
 	await get_tree().process_frame
 	player_ref = get_tree().get_first_node_in_group("player")
+
+func _update_shadow_shroud_material():
+	if has_node("Sprite2D") and $Sprite2D.material is ShaderMaterial:
+		$Sprite2D.material.set_shader_parameter("unlit_alpha", shadow_shroud_unlit_alpha)
+		$Sprite2D.material.set_shader_parameter("unlit_color", shadow_shroud_unlit_color)
 
 func _physics_process(delta):
 	# Knockback processing (shared from Actor)
@@ -109,12 +137,16 @@ func _dead(delta):
 	move_and_slide()
 
 # ── HELPERS ─────────────────────────────────────────────────────────────────
+# Áp dụng sát thương tiếp xúc bằng cách kiểm tra khoảng cách bao quanh (bounding box) giữa quái và Player,
+# do hai thực thể đã được thiết lập đi xuyên qua nhau và không sinh ra lực va chạm vật lý.
 func _apply_contact_damage():
-	for i in get_slide_collision_count():
-		var col = get_slide_collision(i)
-		var body = col.get_collider()
-		if body.is_in_group("player") and body.has_method("take_damage"):
-			body.take_damage(CONTACT_DAMAGE, global_position)
+	if player_ref and player_ref.has_method("take_damage") and player_ref.current_state != player_ref.State.DEFEATED:
+		var diff_x = abs(global_position.x - player_ref.global_position.x)
+		var diff_y = abs(global_position.y - player_ref.global_position.y)
+		# Kích thước gạch 32x32, player rộng 32 (nửa rộng 16), enemy rộng 32 (nửa rộng 16).
+		# Ngưỡng tiếp xúc ngang < 30.0 và dọc < 44.0 tức là hai thực thể đang chạm/chồng lấn nhau.
+		if diff_x < 30.0 and diff_y < 44.0:
+			player_ref.take_damage(CONTACT_DAMAGE, global_position)
 
 # ── DEATH (override Actor.die) ───────────────────────────────────────────────
 func die():
