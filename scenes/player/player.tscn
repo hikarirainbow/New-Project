@@ -1,38 +1,38 @@
-[gd_scene load_steps=5 format=3 uid="uid://c1y7h8d3p2"]
+[gd_scene format=3 uid="uid://c1c2o7i1jjmyx"]
 
-[ext_resource type="Script" path="res://scenes/player/player.gd" id="1_player_gd"]
-[ext_resource type="Texture2D" uid="uid://d3u2h2n3r1" path="res://icon.svg" id="2_player_icon"]
+[ext_resource type="Script" uid="uid://c8wj401j1yimo" path="res://scenes/player/player.gd" id="1_player_gd"]
+[ext_resource type="Texture2D" uid="uid://4q335xxs2p" path="res://icon.svg" id="2_player_icon"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
-size = Vector2(32, 64)
+size = Vector2(28, 54)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
 size = Vector2(50, 10)
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" unique_id=755196729]
 collision_layer = 2
 collision_mask = 5
 script = ExtResource("1_player_gd")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=856507457]
 scale = Vector2(0.25, 0.5)
 texture = ExtResource("2_player_icon")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1328839108]
+position = Vector2(0, 5)
 shape = SubResource("RectangleShape2D_player")
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=175367551]
 zoom = Vector2(1.5, 1.5)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 
-[node name="AttackArea" type="Area2D" parent="."]
+[node name="AttackArea" type="Area2D" parent="." unique_id=883279423]
 collision_layer = 0
 collision_mask = 4
-monitoring = true
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea" unique_id=1625333485]
 position = Vector2(45, 0)
 shape = SubResource("RectangleShape2D_attack")
 disabled = true

@@ -9,7 +9,7 @@ JUMP: -450.0 (~103px apex, hold to jump higher)
 JUMP_STYLE: Smooth variable jump – on release velocity.y *= 0.4 if rising
 GRAVITY_UP: 980. GRAVITY_DOWN: 980*1.5=1470
 HP: max=100, respawn_debuff=-20 (max HP 80)
-DASH: 0.2s (0.18s iframe, 0.02s lerp), CD=0.8s (upgradable 0.4s). Key=C
+DASH: 0.2s (0.18s iframe, 0.02s lerp), CD=0.8s (upgradable 0.4s). Direction locked, sprite faces dash direction, recovery lerps to 0 or same direction. Key=C
 ATTACK: 0.1s, Hitbox 50x10 Area2D offset 20px front (detects Body2D). Blue rect indicator. Key=X
 
 ## Upgrade Item

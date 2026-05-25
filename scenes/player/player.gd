@@ -128,6 +128,11 @@ func start_dash():
 		dir = -1.0 if (has_node("Sprite2D") and $Sprite2D.flip_h) else 1.0
 	
 	dash_direction = Vector2(dir, 0.0).normalized()
+	
+	# Quay mặt Sprite nhân vật theo hướng lướt
+	if has_node("Sprite2D"):
+		$Sprite2D.flip_h = dash_direction.x < 0
+		
 	velocity.x = dash_direction.x * DASH_SPEED
 	velocity.y = 0.0 # Khóa vận tốc nhảy/rơi theo phương dọc khi đang lướt chủ động
 	is_invincible = true
@@ -145,8 +150,11 @@ func handle_dash_state(delta):
 		# 1/10 đoạn cuối: Giảm tốc độ mượt mà về tốc độ gốc và mất miễn sát thương
 		is_invincible = false
 		
-		# Lấy tốc độ đích sau khi kết thúc lướt (tùy vào phím bấm hiện tại của người chơi)
-		var target_speed = Input.get_axis("move_left", "move_right") * SPEED
+		# Khóa hướng di chuyển: Chỉ cho phép di chuyển tiếp theo hướng lướt nếu người giữ đúng hướng đó
+		var input_dir = Input.get_axis("move_left", "move_right")
+		var target_speed = 0.0
+		if sign(input_dir) == sign(dash_direction.x):
+			target_speed = dash_direction.x * SPEED
 		
 		# Tính toán tỷ lệ phần trăm tiến trình trong đoạn cuối (0.0 đến 1.0)
 		var recovery_time_passed = dash_timer - DASH_ACTIVE_DURATION
