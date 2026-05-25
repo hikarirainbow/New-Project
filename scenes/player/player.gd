@@ -276,44 +276,38 @@ func _draw():
 		# Vẽ hình chữ nhật màu xanh dương bán trong suốt cao 10px (từ Y = -5 đến 5)
 		draw_rect(Rect2(x_pos, -5.0, 50.0, 10.0), Color(0.15, 0.15, 0.85, 0.6))
 
-# Thiết lập PointLight2D phát sáng với thuật toán Smoothstep
+# Thiết lập PointLight2D — 4 điểm cubic, texture 1024px, không banding
 func _setup_player_light():
 	var light = PointLight2D.new()
 	light.name = "PlayerLight"
 	
+	# Chỉ dùng 4 điểm kiểm soát — Godot cubic interpolation sẽ tạo đường cong mịn hoàn toàn
 	var gradient = Gradient.new()
 	gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CUBIC
 	
-	# Thiết lập 2 điểm biên trước
+	# Điểm 0: Tâm sáng trắng hoàn toàn
 	gradient.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
-	gradient.set_color(1, Color(0.25, 0.18, 0.35, 0.0)) # Hòa vào màu tím của CanvasModulate ở rìa
+	# Điểm 1: Rìa ngoài cùng — hòa vào nền tím, hoàn toàn trong suốt
+	gradient.set_color(1, Color(0.25, 0.18, 0.35, 0.0))
 	
-	# Thuật toán sinh điểm trung gian tạo đường cong Smoothstep (3t^2 - 2t^3)
-	for i in range(1, 10):
-		var t = i / 10.0
-		var factor = 1.0 - (3.0 * (t * t) - 2.0 * (t * t * t))
-		var color = Color(1.0, 1.0, 1.0, factor)
-		if t > 0.5:
-			# Pha trộn màu tím ở nửa ngoài tầm nhìn để chuyển sắc tự nhiên hơn
-			var blend_ratio = (t - 0.5) * 2.0
-			color = Color(
-				lerp(1.0, 0.25, blend_ratio),
-				lerp(1.0, 0.18, blend_ratio),
-				lerp(1.0, 0.35, blend_ratio),
-				factor
-			)
-		gradient.add_point(t, color)
+	# Điểm 2 (t=0.4): Vẫn còn sáng mạnh — giữ vùng sáng rộng
+	gradient.add_point(0.4, Color(1.0, 1.0, 1.0, 0.85))
+	# Điểm 3 (t=0.75): Bắt đầu pha tím, mờ dần tự nhiên
+	gradient.add_point(0.75, Color(0.55, 0.42, 0.65, 0.2))
 	
 	var grad_tex = GradientTexture2D.new()
 	grad_tex.gradient = gradient
 	grad_tex.fill = GradientTexture2D.FILL_RADIAL
 	grad_tex.fill_from = Vector2(0.5, 0.5)
 	grad_tex.fill_to = Vector2(1.0, 0.5)
-	grad_tex.width = 600 # Tầm nhìn lớn hơn (600px)
-	grad_tex.height = 600
+	grad_tex.width = 1024  # Texture lớn hơn = chuyển sắc mịn hơn, không bị banding
+	grad_tex.height = 1024
 	
 	light.texture = grad_tex
+	light.texture_scale = 1.5  # Phóng to tầm nhìn thêm 50%
 	light.shadow_enabled = true
-	light.shadow_filter = PointLight2D.SHADOW_FILTER_PCF5
+	light.shadow_filter = PointLight2D.SHADOW_FILTER_PCF13
+	light.shadow_filter_smooth = 2.0
 	light.shadow_color = Color(0, 0, 0, 0.7)
 	add_child(light)
+
