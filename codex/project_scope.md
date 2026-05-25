@@ -9,7 +9,7 @@ CONTROLS:
 
 STATUS:
 - Walk/Jump/Gravity: DONE
-- Variable Jump Height (Hold Space to jump higher, on release velocity.y *= 0.4, JUMP_VELOCITY=-450): DONE
+- Variable Jump Height (Hold Space to jump higher, on release velocity.y *= 0.1, JUMP_VELOCITY=-450, min jump ~5px): DONE
 - Player Resize (32x64px, collision 32x64): DONE
 - Camera Zoom (Vector2(1.5, 1.5)): DONE
 - Dash (0.2s, 0.18s iframe, 0.02s lerp, 0.8s CD): DONE

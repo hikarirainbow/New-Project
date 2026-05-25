@@ -87,9 +87,9 @@ func handle_move_state(delta):
 		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
 		velocity.y += active_gravity * delta
 
-	# Variable jump height: nếu nhả phím jump sớm trong khi đang bay lên, giảm vận tốc đi lên
+	# Variable jump height: nếu nhả phím jump sớm trong khi đang bay lên, giảm vận tốc đi lên mạnh để đạt min jump cực thấp (~5px)
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
-		velocity.y *= 0.4
+		velocity.y *= 0.1
 
 	# Nếu đang chịu lực giật lùi (knockback), khóa phím điều khiển và giảm tốc dần
 	if knockback_timer > 0.0:
