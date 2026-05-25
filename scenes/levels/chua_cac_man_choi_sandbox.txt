@@ -1,0 +1,2 @@
+Thư mục này chứa các màn chơi của game.
+Ví dụ: màn chơi thử nghiệm sandbox_level.tscn, các màn chơi chính thức, v.v.

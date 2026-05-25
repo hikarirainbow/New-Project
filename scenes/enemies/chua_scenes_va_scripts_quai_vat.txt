@@ -1,0 +1,2 @@
+Thư mục này chứa cảnh (scenes) và mã nguồn (scripts) của các loại quái vật.
+Ví dụ: quái thường, quái có cơ chế tóm (Grab-type enemy), Boss, v.v.

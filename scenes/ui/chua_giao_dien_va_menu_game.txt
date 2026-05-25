@@ -1,0 +1,2 @@
+Thư mục này chứa giao diện UI và HUD của game.
+Ví dụ: giao diện struggle QTE, màn hình Game Over, Menu chính, v.v.

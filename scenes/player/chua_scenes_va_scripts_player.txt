@@ -1,0 +1,2 @@
+Thư mục này chứa cảnh (scenes) và mã nguồn (scripts) liên quan đến nhân vật chính Player.
+Ví dụ: player.tscn, player.gd, v.v.
