@@ -29,6 +29,11 @@ var dash_cooldown_timer = 0.0
 var dash_direction = Vector2.ZERO
 var is_invincible = false
 
+# Các thông số của kỹ năng Attack (Tấn công)
+const ATTACK_DURATION = 0.1
+var attack_timer = 0.0
+@onready var attack_area_collision = $AttackArea/CollisionShape2D
+
 # Tín hiệu phát đi khi máu thay đổi hoặc khi chết
 signal health_changed(new_health)
 signal player_defeated
@@ -38,6 +43,8 @@ var spawn_point: Vector2
 func _ready():
 	add_to_group("player")
 	spawn_point = global_position
+	if has_node("AttackArea"):
+		$AttackArea.area_entered.connect(_on_attack_area_entered)
 
 func _physics_process(delta):
 	# Giảm thời gian hồi chiêu lướt
@@ -46,6 +53,12 @@ func _physics_process(delta):
 		
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
+		
+	if attack_timer > 0.0:
+		attack_timer -= delta
+		queue_redraw()
+		if attack_timer <= 0.0:
+			end_attack()
 		
 	match current_state:
 		State.MOVE:
@@ -59,6 +72,11 @@ func _physics_process(delta):
 
 # Logic trạng thái di chuyển tự do
 func handle_move_state(delta):
+	# Kích hoạt Tấn công khi nhấn phím X (nút 'attack') và không đang tấn công
+	if Input.is_action_just_pressed("attack") and attack_timer <= 0.0:
+		start_attack()
+		return
+
 	# Kích hoạt Dash (lướt nhanh) khi nhấn Shift (nút 'dash') và hết thời gian hồi chiêu
 	if Input.is_action_just_pressed("dash") and dash_cooldown_timer <= 0.0:
 		start_dash()
@@ -219,3 +237,34 @@ func respawn():
 func upgrade_dash_cooldown():
 	dash_cooldown = dash_cooldown / 2.0
 	print("Dash cooldown upgraded! New cooldown: ", dash_cooldown)
+
+# Bắt đầu kỹ năng tấn công cận chiến
+func start_attack():
+	attack_timer = ATTACK_DURATION
+	if attack_area_collision:
+		attack_area_collision.disabled = false
+		# Điều chỉnh vị trí hitbox: cách tâm nhân vật 20px, dài 50px (tức tâm của hình chữ nhật cách nhân vật 20 + 25 = 45px)
+		var is_facing_left = $Sprite2D.flip_h if has_node("Sprite2D") else false
+		attack_area_collision.position.x = -45.0 if is_facing_left else 45.0
+	queue_redraw()
+
+# Kết thúc kỹ năng tấn công
+func end_attack():
+	if attack_area_collision:
+		attack_area_collision.disabled = true
+	queue_redraw()
+
+# Xử lý khi rìa tấn công quét trúng Area của kẻ địch
+func _on_attack_area_entered(area):
+	if area.has_method("take_damage"):
+		area.take_damage(20) # Gây 20 sát thương lên kẻ địch
+
+# Vẽ hiệu ứng hitbox màu xanh dương làm chỉ báo visual
+func _draw():
+	# Chỉ vẽ khi đang kích hoạt chiêu tấn công
+	if attack_timer > 0.0:
+		var is_facing_left = $Sprite2D.flip_h if has_node("Sprite2D") else false
+		# Nếu quay trái, bắt đầu vẽ từ -70px (cách 20px + dài 50px). Nếu quay phải, bắt đầu từ 20px
+		var x_pos = -70.0 if is_facing_left else 20.0
+		# Vẽ hình chữ nhật màu xanh dương bán trong suốt cao 10px (từ Y = -5 đến 5)
+		draw_rect(Rect2(x_pos, -5.0, 50.0, 10.0), Color(0.15, 0.15, 0.85, 0.6))

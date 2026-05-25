@@ -1,10 +1,13 @@
-[gd_scene format=3 uid="uid://c1y7h8d3p2"]
+[gd_scene load_steps=5 format=3 uid="uid://c1y7h8d3p2"]
 
 [ext_resource type="Script" path="res://scenes/player/player.gd" id="1_player_gd"]
 [ext_resource type="Texture2D" uid="uid://d3u2h2n3r1" path="res://icon.svg" id="2_player_icon"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(32, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
+size = Vector2(50, 10)
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
@@ -22,3 +25,14 @@ shape = SubResource("RectangleShape2D_player")
 zoom = Vector2(2, 2)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
+
+[node name="AttackArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 4
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea"]
+position = Vector2(45, 0)
+shape = SubResource("RectangleShape2D_attack")
+disabled = true
