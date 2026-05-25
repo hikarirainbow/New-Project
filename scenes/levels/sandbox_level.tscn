@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=3 uid="uid://d1h7h8d3p3"]
+[gd_scene load_steps=9 format=3 uid="uid://d1h7h8d3p3"]
 
 [ext_resource type="PackedScene" uid="uid://c1y7h8d3p2" path="res://scenes/player/player.tscn" id="1_player_tscn"]
 [ext_resource type="PackedScene" uid="uid://d1u7h8d3p4" path="res://scenes/ui/hud.tscn" id="2_hud_tscn"]
 [ext_resource type="PackedScene" uid="uid://b2e7h8d3p5" path="res://scenes/enemies/static_enemy.tscn" id="3_static_enemy_tscn"]
 [ext_resource type="PackedScene" uid="uid://c3e7h8d3p6" path="res://scenes/items/dash_upgrade_item.tscn" id="4_dash_upgrade_item_tscn"]
 [ext_resource type="PackedScene" uid="uid://c5e7h8d3p7" path="res://scenes/enemies/grab_enemy.tscn" id="5_grab_enemy_tscn"]
+[ext_resource type="PackedScene" uid="uid://d2u7h8d3p8" path="res://scenes/ui/settings_menu.tscn" id="6_settings_menu_tscn"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(1200, 40)
@@ -15,6 +16,8 @@ size = Vector2(40, 400)
 [node name="SandboxLevel" type="Node2D"]
 
 [node name="HUD" parent="." instance=ExtResource("2_hud_tscn")]
+
+[node name="SettingsMenu" parent="." instance=ExtResource("6_settings_menu_tscn")]
 
 [node name="Player" parent="." instance=ExtResource("1_player_tscn")]
 position = Vector2(600, 300)

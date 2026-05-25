@@ -101,4 +101,28 @@ Tài liệu này phân tách dự án game Metroidvania 2D Pixel Art thành các
 * `[x]` **Bề mặt địa hình:** Mặt đất phẳng dài xanh sẫm tại tọa độ Y = 500, có tường chặn 2 bên để giữ Player.
 * `[x]` **Bố trí Kẻ địch tĩnh (Hạt đậu đỏ):** Đặt tại `(400, 464)`. Gây `15` sát thương và kích hoạt đẩy lùi khi Player đụng phải. In ra thông báo nhận sát thương khi bị chém trúng.
 * `[x]` **Bố trí Vật phẩm nâng cấp (Hạt xanh lá):** Đặt tại `(800, 464)`. Giảm nửa thời gian hồi Dash khi ăn được.
-* `[ ]` **Bố trí Kẻ địch tóm (Grab Enemy):** *[Sắp triển khai]*
+* `[x]` **Bố trí Kẻ địch tóm (Grab Enemy):** *[Sắp triển khai]*
+
+---
+
+## Giai Đoạn 7: Hệ Thống Cài Đặt & Lưu Cấu Hình (Settings & Save System)
+
+* `[x]` **Menu Cài Đặt (ESC Key):**
+  * Kích hoạt bất kỳ lúc nào bằng phím `ESC`.
+  * Làm ngừng hoàn toàn thời gian game (Pause) nhưng bản thân Menu vẫn hoạt động (`process_mode = PROCESS_MODE_ALWAYS`).
+  * Giao diện u ám bán trong suốt (`StyleBoxFlat_panel`), có nhãn tiêu đề và danh sách điều khiển dạng lưới.
+* `[x]` **Đổi Nút Điều Khiển (Key Remapping):**
+  * Nhấp vào một nút phím để bắt đầu chờ nhận diện phím mới (`[ Nhấn phím bất kỳ ]`).
+  * Tự động áp dụng phím mới vào `InputMap` ngay lập tức.
+  * Tự động lọc phím `ESC` để tránh lỗi khóa phím hệ thống.
+* `[x]` **Lưu & Tải Bằng JSON (Tối ưu nhất for Key-Value):**
+  * Cấu hình lưu trữ tại `user://input_config.json`.
+  * Tự động kiểm tra file, tạo cấu hình mặc định (A/D/Space/C/X) nếu chưa có hoặc tự tải ở lần chạy kế tiếp.
+* `[x]` **Tính Năng Bổ Trợ (Mute & Reset):**
+  * **Chức năng 1 (Âm thanh):** Bật/Tắt âm thanh toàn cục (Mute/Unmute Audio Server).
+  * **Chức năng 2 (Đặt lại phím):** Khôi phục toàn bộ phím bấm về mặc định ban đầu.
+* `[x]` **Hiệu Ứng Rê Chuột (Hover Highlight):**
+  * Các nút trong menu có hiệu ứng dòng kẻ chân màu xanh sáng (`StyleBoxFlat_btn_hover` với viền dưới `2px`) khi đưa chuột vào.
+* `[x]` **Quản Lý Con Trỏ Chuột (Cursor Capture):**
+  * Khi chơi game: Chuột hoàn toàn bị ẩn và bắt giữ trong màn hình game (`Input.mouse_mode = Input.MOUSE_MODE_CAPTURED`).
+  * Khi mở Menu (ESC): Chuột hiện lên để thao tác click (`Input.mouse_mode = Input.MOUSE_MODE_VISIBLE`).

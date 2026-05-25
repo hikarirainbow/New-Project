@@ -37,6 +37,8 @@ func _ready():
 	spawn_point = global_position
 	if has_node("AttackArea"):
 		$AttackArea.area_entered.connect(_on_attack_area_entered)
+	# Ẩn và khóa chuột vào màn hình khi bắt đầu chơi game
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _physics_process(delta):
 	# Giảm thời gian hồi chiêu lướt

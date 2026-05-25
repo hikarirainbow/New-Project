@@ -69,3 +69,24 @@ Tài liệu này đóng vai trò là **Kịch bản Phát triển (Game Dev Scri
   * Đặt 1 kẻ địch hạt đậu đỏ tĩnh tại `(400, 464)`.
   * Đặt 1 hạt nâng cấp lướt màu xanh lá tại `(800, 464)`.
   * Đặt 1 quái vật Grab tuần tra *[Sắp triển khai]*.
+
+---
+
+## 6. Kịch Bản Hệ Thống Cài Đặt (Settings & Save System Script)
+
+### A. Autoload InputManager
+* **Chức năng:** Tải và lưu trữ các phím bấm dạng JSON tại `user://input_config.json`.
+* **Cấu hình mặc định:**
+  * `move_left` = A (65)
+  * `move_right` = D (68)
+  * `jump` = Space (32)
+  * `dash` = C (67)
+  * `attack` = X (88)
+
+### B. Settings UI
+* **Bật/Tắt:** Khi bấm phím `ESC`, trò chơi bị dừng (Pause), hiển thị UI Settings Menu và chuyển chuột sang chế độ `MOUSE_MODE_VISIBLE`.
+* **2 Chức năng bổ trợ:**
+  * **Audio Mute:** Cho phép bật/tắt toàn bộ âm thanh (Mute/Unmute AudioServer bus 0).
+  * **Reset Controls:** Khôi phục cấu hình phím mặc định của InputManager, lưu đè file JSON.
+* **Giao diện & Hover:** Các nút bấm phẳng trong suốt hiển thị tên phím gán. Khi rê chuột vào (Hover), tạo một đường viền dưới màu xanh sáng bóng (`StyleBoxFlat` với `border_width_bottom = 2px`).
+* **Ẩn chuột:** Chuột mặc định bị ẩn và bắt giữ (`Input.mouse_mode = Input.MOUSE_MODE_CAPTURED`) khi chơi game bình thường.
