@@ -1,6 +1,6 @@
 extends StaticBody2D
 
-const SIZE = 64.0
+const SIZE = 32.0
 
 func _ready() -> void:
 	collision_layer = 1

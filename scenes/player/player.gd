@@ -2,8 +2,7 @@ extends Actor
 
 # Các thông số di chuyển cơ bản (phù hợp với game platformer 2D)
 const SPEED           = 200.0
-const JUMP_VELOCITY_MAX  = -657.0  # 220 px apex  (sqrt(2*980*220))
-const JUMP_CUT_VELOCITY  = -501.0  # 128 px apex  (sqrt(2*980*128))
+const JUMP_VELOCITY   = -450.0  # ~103px apex
 const ACCELERATION    = 1000.0
 
 # Trạng thái nhân vật (FSM)
@@ -42,7 +41,7 @@ func _ready():
 	add_to_group("player")
 	spawn_point = global_position
 	if has_node("AttackArea"):
-		$AttackArea.area_entered.connect(_on_attack_area_entered)
+		$AttackArea.body_entered.connect(_on_attack_body_entered)
 	# Ẩn và khóa chuột vào màn hình khi bắt đầu chơi game
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -88,9 +87,9 @@ func handle_move_state(delta):
 		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
 		velocity.y += active_gravity * delta
 
-	# Variable jump height: nếu nhả phím jump sớm trong khi đang bay lên, giới hạn vận tốc lên trên
-	if not is_on_floor() and not Input.is_action_pressed("jump") and velocity.y < JUMP_CUT_VELOCITY:
-		velocity.y = JUMP_CUT_VELOCITY
+	# Variable jump height: nếu nhả phím jump sớm trong khi đang bay lên, giảm vận tốc đi lên
+	if Input.is_action_just_released("jump") and velocity.y < 0.0:
+		velocity.y *= 0.4
 
 	# Nếu đang chịu lực giật lùi (knockback), khóa phím điều khiển và giảm tốc dần
 	if knockback_timer > 0.0:
@@ -98,9 +97,9 @@ func handle_move_state(delta):
 		move_and_slide()
 		return
 
-	# Nhảy (sử dụng lực tối đa — phả phím sớm để nhảy thấp hơn)
+	# Nhảy (sử dụng lực tối đa — thả phím sớm để nhảy thấp hơn)
 	if Input.is_action_just_pressed("jump") and is_on_floor():
-		velocity.y = JUMP_VELOCITY_MAX
+		velocity.y = JUMP_VELOCITY
 
 	# Lấy hướng nhập từ bàn phím A/D hoặc Trái/Phải
 	var direction = Input.get_axis("move_left", "move_right")
@@ -242,10 +241,10 @@ func end_attack():
 		attack_area_collision.disabled = true
 	queue_redraw()
 
-# Xử lý khi rìa tấn công quét trúng Area của kẻ địch
-func _on_attack_area_entered(area):
-	if area.has_method("take_damage"):
-		area.take_damage(20) # Gây 20 sát thương lên kẻ địch
+# Xử lý khi rìa tấn công quét trúng Body của kẻ địch
+func _on_attack_body_entered(body):
+	if body.has_method("take_damage"):
+		body.take_damage(20, global_position) # Gây 20 sát thương lên kẻ địch
 
 # Vẽ hiệu ứng hitbox màu xanh dương làm chỉ báo visual
 func _draw():

@@ -2,9 +2,9 @@ extends Node2D
 
 const MapTile = preload("res://scenes/levels/map_tile.gd")
 
-const TILE  = 64
-const COLS  = 20   # 1280 px wide
-const ROWS  = 13   # 832 px tall
+const TILE  = 32
+const COLS  = 60   # 1920 px wide
+const ROWS  = 20   # 640 px tall
 
 var rng := RandomNumberGenerator.new()
 
@@ -25,25 +25,25 @@ func _build_map() -> void:
 	for c in range(COLS):
 		_place(c, 0)
 
-	# Floor (row 12)
+	# Floor (row 19)
 	for c in range(COLS):
 		_place(c, ROWS - 1)
 
-	# Left wall (col 0, rows 1-11)
+	# Left wall (col 0, rows 1-18)
 	for r in range(1, ROWS - 1):
 		_place(0, r)
 
-	# Right wall (col 19, rows 1-11)
+	# Right wall (col 59, rows 1-18)
 	for r in range(1, ROWS - 1):
 		_place(COLS - 1, r)
 
-	# Random platform layers at rows 9, 6, 3
-	# (192 px spacing ≈ 3 tiles — reachable with 220 px max jump)
-	for row in [9, 6, 3]:
+	# Random platform layers at rows 16, 13, 10, 7
+	# (96 px spacing = 3 tiles — reachable with 103 px max jump)
+	for row in [16, 13, 10, 7]:
 		_build_platform_row(row)
 
 func _build_platform_row(row: int) -> void:
-	var target_platforms := rng.randi_range(2, 3)
+	var target_platforms := rng.randi_range(4, 6)
 	var used             := {}    # col → true
 	var placed           := 0
 	var tries            := 0
