@@ -150,3 +150,6 @@ func _on_corpse_body_entered(body):
 		var tw = create_tween()
 		tw.tween_property(self, "modulate:a", 0.0, 0.35)
 		tw.finished.connect(queue_free)
+
+func is_alive() -> bool:
+	return current_state != State.DEAD

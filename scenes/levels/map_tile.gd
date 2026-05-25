@@ -12,6 +12,19 @@ func _ready() -> void:
 	shape.shape     = rect_shape
 	add_child(shape)
 
+	# Light occluder for dynamic 2D shadows
+	var occluder = LightOccluder2D.new()
+	var poly = OccluderPolygon2D.new()
+	var h := SIZE * 0.5
+	poly.polygon = PackedVector2Array([
+		Vector2(-h, -h),
+		Vector2(h, -h),
+		Vector2(h, h),
+		Vector2(-h, h)
+	])
+	occluder.occluder = poly
+	add_child(occluder)
+
 func _draw() -> void:
 	var h := SIZE * 0.5
 	# Brown earth fill

@@ -44,6 +44,8 @@ func _ready():
 		$AttackArea.body_entered.connect(_on_attack_body_entered)
 	# Ẩn và khóa chuột vào màn hình khi bắt đầu chơi game
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	# Tạo ánh sáng phát sáng cho nhân vật
+	_setup_player_light()
 
 func _physics_process(delta):
 	# Giảm thời gian hồi chiêu lướt
@@ -273,3 +275,27 @@ func _draw():
 		var x_pos = -70.0 if is_facing_left else 20.0
 		# Vẽ hình chữ nhật màu xanh dương bán trong suốt cao 10px (từ Y = -5 đến 5)
 		draw_rect(Rect2(x_pos, -5.0, 50.0, 10.0), Color(0.15, 0.15, 0.85, 0.6))
+
+# Thiết lập PointLight2D phát sáng
+func _setup_player_light():
+	var light = PointLight2D.new()
+	light.name = "PlayerLight"
+	
+	# Tạo texture dạng hình tròn chuyển sắc từ trắng sang trong suốt
+	var gradient = Gradient.new()
+	gradient.add_point(0.0, Color(1.0, 1.0, 1.0, 1.0))
+	gradient.add_point(1.0, Color(1.0, 1.0, 1.0, 0.0))
+	
+	var grad_tex = GradientTexture2D.new()
+	grad_tex.gradient = gradient
+	grad_tex.fill = GradientTexture2D.FILL_RADIAL
+	grad_tex.fill_from = Vector2(0.5, 0.5)
+	grad_tex.fill_to = Vector2(1.0, 0.5)
+	grad_tex.width = 384
+	grad_tex.height = 384
+	
+	light.texture = grad_tex
+	light.shadow_enabled = true
+	light.shadow_filter = PointLight2D.SHADOW_FILTER_PCF5
+	light.shadow_color = Color(0, 0, 0, 0.95)
+	add_child(light)

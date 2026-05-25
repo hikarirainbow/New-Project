@@ -28,3 +28,5 @@ STATUS:
 - Red Bean Static Enemy: DELETED
 - Patrol/Chase/Corpse Enemy: DONE
 - Dash Upgrade Item: DONE
+- 2D Lighting & Shadows (CanvasModulate Color(0.08,0.08,0.12), Player PointLight2D 384px radial, Tile LightOccluder2D square polygon): DONE
+- Enemy Spawner (procedural ground coordinates spawner, maintains 5 alive GrabEnemies, >300px distance threshold): DONE
