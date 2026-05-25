@@ -14,19 +14,35 @@ Tài liệu này đóng vai trò là **Kịch bản Phát triển (Game Dev Scri
 
 ## 2. Kịch Bản Thiết Kế Nhân Vật & Kỹ Năng (Player Mechanics Script)
 
-### A. Bộ Di Chuyển Cơ Bản (Thử nghiệm trước)
-* **Tốc độ di chuyển mặt đất:** `200 px/s`
-* **Lực nhảy (Jump Force):** `-350 px/s`
-* **Trọng lực thông thường (Gravity):** `980 px/s²`
-* **Kỹ năng dự kiến (mở rộng sau):** Dash (lướt nhanh), Wall Jump (nhảy tường), Double Jump (nhảy đúp).
+### A. Bộ Di Chuyển Cục Bộ
+* **Tốc độ di chuyển mặt đất (SPEED):** `200 px/s` (Gia tốc `1000`, Ma sát dừng `1200`)
+* **Lực nhảy (Jump Force):** `-380 px/s` (Trọng lực rơi tự do `980 * 1.5` để tăng lực rơi)
+* **Lướt nhanh (Dash - Phím C):**
+  * Thời gian lướt: `0.2` giây.
+  * 0.18 giây đầu (9/10): Tốc độ tăng vọt lên `DASH_SPEED = 600 px/s`, khóa trục dọc Y, và **miễn nhiễm sát thương** (`is_invincible = true`).
+  * 0.02 giây cuối (1/10): Tắt miễn nhiễm, nội suy vận tốc (Lerp) mượt mà về tốc độ di chuyển mong muốn và áp dụng lại trọng lực.
+  * Hồi chiêu lướt (`dash_cooldown`): mặc định `0.8` giây.
 
 ### B. Chỉ số sinh tồn
 * **Máu tối đa (Max Health):** `100`
-* **Trạng thái Debuff sau khi thua cuộc:** Giảm `20%` sức tấn công hoặc `-20` máu tối đa cho đến khi sử dụng vật phẩm thanh tẩy hoặc lưu game tại điểm an toàn.
+* **Trạng thái Debuff sau khi thua cuộc:** Giảm `-20` máu tối đa (còn lại tối đa 80 HP) khi hồi sinh.
+
+### C. Tấn công cận chiến (Attack - Phím X)
+* **Thời gian ra chiêu:** `0.1` giây.
+* **Quy chuẩn Hitbox:** Kích hoạt hộp va chạm Area2D dài `50px` cao `10px` đặt lệch tâm nhân vật `20px` về phía trước (Tâm X = `+45px` hoặc `-45px` tùy hướng quay mặt).
+* **Vẽ chỉ báo visual:** Vẽ hình chữ nhật màu xanh dương bán trong suốt trong thời gian ra chiêu.
 
 ---
 
-## 3. Kịch Bản Cảnh Thua Cuộc (Defeated Scene Hook Script)
+## 3. Kịch Bản Vật Phẩm (Item Script)
+
+### A. Hạt nâng cấp Dash Cooldown (Green Circle Item)
+* **Đặc tính:** Hình tròn màu xanh lá cây đặt ở bên phải màn hình tại `(800, 464)`.
+* **Hiệu ứng thu thập:** Gọi hàm nâng cấp `upgrade_dash_cooldown()` trên Player để **giảm vĩnh viễn 50% thời gian hồi chiêu lướt** (`dash_cooldown = 0.4s`) và tự biến mất.
+
+---
+
+## 4. Kịch Bản Cảnh Thua Cuộc (Defeated Scene Hook Script)
 
 ### A. Trigger Hook & Cơ chế QTE (Bắt Sự Kiện)
 1. **Điều kiện kích hoạt:**
@@ -35,22 +51,21 @@ Tài liệu này đóng vai trò là **Kịch bản Phát triển (Game Dev Scri
 2. **Quy trình hoạt động:**
    * Trạng thái Player chuyển sang `GRABBED` (vô hiệu hóa nút di chuyển thông thường).
    * Màn hình kích hoạt thanh đo **QTE Struggle Bar**.
-   * Người chơi phải nhấn phím chỉ định (ví dụ: `Space` hoặc `E`) thật nhanh để tăng thanh đo.
+   * Người chơi phải nhấn phím chỉ định (phím `Space` hoặc `E`) thật nhanh để tăng thanh đo.
    * **Nếu QTE thành công:** Đẩy lùi kẻ địch, hồi lại một lượng máu nhỏ và tiếp tục chiến đấu.
    * **Nếu QTE thất bại:** Chuyển sang trạng thái `DEFEATED`, chạy hoạt họa thua cuộc đầy đủ, sau đó chuyển cảnh sang màn hình Restart kèm theo hiệu ứng **Debuff**.
 
 ### B. Thiết Kế Trình Phát Cảnh Thua Cuộc (Defeat Scene Player)
 * **Animation Sequence:**
-  * Khung cảnh chuyển động mờ dần hoặc rung lắc dữ dội.
-  * Chạy hoạt họa Pixel Art của cảnh thua cuộc (placeholder).
-* **Giao diện UI lựa chọn:**
-  * [Khởi động lại tại Checkpoint] -> Hồi sinh với 80% máu và dính hiệu ứng Debuff.
-  * [Thoát ra Menu chính]
+  * Màn hình mờ dần (Fade out to black) trong `0.5` giây bằng `ScreenFade` của HUD.
+  * Hồi sinh Player tại điểm xuất phát (`spawn_point`), hồi lại `+9999` máu và áp dụng debuff (HP max = 80).
+  * Làm sáng lại màn hình (Fade out) trong `0.5` giây để tiếp tục chơi.
 
 ---
 
-## 4. Kịch Bản Thiết Kế Màn Chơi (Level Design Script)
+## 5. Kịch Bản Thiết Kế Màn Chơi (Level Design Script)
 * **Bản đồ thử nghiệm (Sandbox Level):**
-  * Gồm phòng bắt đầu với nền tảng để chạy nhảy.
-  * Một vật thể bẫy/kẻ địch tĩnh có khả năng gây sát thương hoặc tóm người chơi để thử nghiệm cơ chế QTE/Defeat.
-
+  * Nền đất phẳng dài `1200px` cao `40px` tại Y = 500, có tường chắn 2 bên.
+  * Đặt 1 kẻ địch hạt đậu đỏ tĩnh tại `(400, 464)`.
+  * Đặt 1 hạt nâng cấp lướt màu xanh lá tại `(800, 464)`.
+  * Đặt 1 quái vật Grab tuần tra *[Sắp triển khai]*.

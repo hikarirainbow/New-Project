@@ -7,94 +7,98 @@ Tài liệu này phân tách dự án game Metroidvania 2D Pixel Art thành các
 ## Giai Đoạn 1: Hệ Thống Vật Lý & Di Chuyển (Core Physics & Movement)
 
 ### 1. Bộ Điều Khiển Nhân Vật 2D (Player Controller 2D)
-* **Di chuyển cơ bản (Walk):**
-  * Di chuyển trái/phải bằng phím `A`/`D` hoặc phím mũi tên.
-  * Có gia tốc (Acceleration) khi bắt đầu chạy và giảm tốc (Friction) khi dừng lại để tránh cảm giác trơn trượt.
-* **Nhảy & Rơi (Jump & Fall):**
-  * Nhảy bằng phím `Space` với lực nhảy có thể điều chỉnh (giữ phím nhảy cao hơn, thả phím nhảy thấp hơn).
-  * Áp dụng trọng lực lớn hơn khi nhân vật đang rơi xuống (Fall Gravity) để cảm giác nhảy chắc chắn hơn.
-* **Lướt nhanh (Dash - Dự kiến):**
-  * Phím `Shift` hoặc nhấp đúp hướng để lướt nhanh theo chiều ngang.
-  * Miễn nhiễm sát thương (Invulnerability frames) trong thời gian lướt.
-* **Bám/Nhảy tường (Wall Slide/Wall Jump - Dự kiến):**
-  * Khi áp sát tường, nhân vật trượt xuống chậm hơn và có thể nhảy bật ra hướng ngược lại.
+* `[x]` **Di chuyển cơ bản (Walk):**
+  * Di chuyển trái/phải bằng phím `A`/`D`.
+  * Có gia tốc (Acceleration = 1000) và giảm tốc (Friction = 1200) để di chuyển mượt mà.
+* `[x]` **Nhảy & Rơi (Jump & Fall):**
+  * Nhảy bằng phím `Space` với lực nhảy `JUMP_VELOCITY = -380`.
+  * Áp dụng trọng lực rơi nhanh hơn (`active_gravity = gravity * 1.5` khi đi xuống) giúp cảm giác nhảy nặng tay, chắc chắn.
+* `[x]` **Lướt nhanh (Dash):**
+  * Sử dụng phím **`C`** để lướt nhanh theo chiều ngang.
+  * Tổng thời gian lướt là `0.2` giây.
+  * `0.18` giây đầu (9/10): Tốc độ tăng gấp 3 (`DASH_SPEED = 600 px/s`), khóa chiều dọc, và **miễn nhiễm hoàn toàn sát thương (i-frames)**.
+  * `0.02` giây cuối (1/10): Tắt miễn nhiễm, nội suy vận tốc (Lerp) mượt mà về tốc độ đích dựa trên phím giữ, trả lại trọng lực.
+  * Thời gian hồi chiêu mặc định: `0.8` giây.
+* `[ ]` **Bám/Nhảy tường (Wall Slide/Wall Jump - Dự kiến cho tương lai):**
+  * Trượt tường chậm hơn và nhảy bật ngược ra khi áp sát tường.
 
 ### 2. Thiết Lập Va Chạm Vật Lý (Physics Layers)
-* Phân chia rõ ràng các lớp va chạm trong Godot:
-  * `Layer 1`: Môi trường (Nền đất, tường, trần).
-  * `Layer 2`: Người chơi (Player).
+* `[x]` Phân chia rõ các lớp va chạm trong Godot:
+  * `Layer 1` (Mask 2): Môi trường (Nền đất, tường).
+  * `Layer 2` (Mask 1, 4, 8): Người chơi (Player).
   * `Layer 3`: Kẻ địch (Enemies).
-  * `Layer 4`: Hộp nhận sát thương của người chơi (Player Hitbox).
-  * `Layer 5`: Hộp gây sát thương của kẻ địch (Enemy Hurtbox).
+  * `Layer 4` (Mask 2): Hộp gây/nhận sát thương của kẻ địch/bẫy.
+  * `Layer 8` (Mask 2): Vật phẩm (Items).
 
 ---
 
 ## Giai Đoạn 2: Chỉ Số Sinh Tồn & Hệ Thống Chiến Đấu (Stats & Combat)
 
 ### 1. Chỉ Số Nhân Vật (Player Stats)
-* **Hệ thống máu (Health):**
-  * `current_health` (Máu hiện tại) và `max_health` (Máu tối đa, mặc định `100`).
-* **Trạng thái Suy Yếu (Debuff):**
-  * Khi hồi sinh sau khi thua cuộc, nhân vật chịu Debuff: Giảm `20%` sức tấn công và Giảm `-20` máu tối đa.
-  * Có cơ chế xóa Debuff khi tương tác với Điểm lưu game (Save Point/Sanctuary).
+* `[x]` **Hệ thống máu (Health):**
+  * Máu hiện tại (`current_health`) và máu tối đa (`max_health = 100`).
+  * Có thanh máu UI HUD hiển thị trực quan (`HP: X/Y`) góc trên bên trái, rút máu co lại mượt mà bằng hiệu ứng Tween `0.25 giây`.
+* `[x]` **Trạng thái Suy Yếu (Debuff):**
+  * Khi hồi sinh, nhân vật chịu Debuff: Giảm `-20` máu tối đa (chỉ còn tối đa 80 HP).
+* `[ ]` **Xóa Debuff (Dự kiến):**
+  * Xóa Debuff khi tương tác với Điểm lưu game (Save Point).
 
 ### 2. Hệ Thống Chiến Đấu Cơ Bản (Basic Combat)
-* **Đòn đánh thường (Melee Attack):**
-  * Nhấn chuột trái để vung kiếm cận chiến.
-  * Tạo CollisionShape ngắn phía trước nhân vật để quét trúng kẻ địch.
-  * Kẻ địch trúng đòn bị giật lùi (Knockback) và nháy đỏ.
-* **Hệ thống nhận sát thương của người chơi:**
-  * Khi va chạm với quái vật thường: mất máu và bị đẩy lùi ngắn.
+* `[x]` **Đòn đánh cận chiến (Melee Attack):**
+  * Nhấn phím **`X`** để chém cận chiến trong `0.1` giây.
+  * Kích hoạt `AttackArea` (`Area2D` với `CollisionShape2D` cỡ `50x10`) cách tâm nhân vật `20px` về phía trước.
+  * Có hiển thị vệt chém visual hình chữ nhật màu xanh dương bán trong suốt trong `0.1` giây nhờ hàm `_draw()`.
+  * Gây `20` sát thương lên kẻ địch trúng đòn (Layer 4).
+* `[x]` **Nhận sát thương & Đẩy lùi (Knockback):**
+  * Khi va chạm với kẻ địch/bẫy đỏ (Layer 4): bị trừ máu, nảy nhẹ lên và đẩy lùi ra xa nguồn sát thương.
+  * Khóa phím điều khiển trong `0.25` giây (`knockback_timer`) để tăng cảm giác va đập.
 
 ---
 
-## Giai Đoạn 3: Hệ Thống Kháng Cự & Bấm Phím Nhanh (Grab & QTE System)
+## Giai Đoạn 3: Hệ Thống Vật Phẩm (Item System)
+
+* `[x]` **Vật phẩm giảm hồi chiêu Dash (Green Circle Item):**
+  * Đặt tại tọa độ `(800, 464)`, đối xứng với quái vật đỏ.
+  * Vẽ hình tròn xanh lá đường kính `24px` viền đen.
+  * Khi Player chạm vào: kích hoạt hàm `upgrade_dash_cooldown()` trên Player để **giảm vĩnh viễn 1/2 thời gian hồi chiêu Dash** (từ `0.8s` xuống `0.4s`) và tự hủy (`queue_free()`).
+
+---
+
+## Giai Đoạn 4: Grab & QTE System (Khống chế & Nhấn phím giải thoát)
 
 ### 1. Trạng Thái Bị Khống Chế (Grabbed State)
-* **Kẻ địch đặc biệt (Grab-type Enemy):**
-  * Quái vật có một vùng phát hiện tấn công đặc biệt (Grab Area). Khi người chơi đi vào vùng này, quái vật sẽ lao vào tóm lấy người chơi thay vì gây sát thương thông thường.
-* **Chuyển đổi trạng thái:**
-  * Nhân vật chuyển sang trạng thái `GRABBED`.
-  * Khóa hoàn toàn khả năng di chuyển và tấn công của người chơi.
-  * Chạy hoạt họa nhân vật bị quái vật đè/khống chế.
+* `[ ]` **Kẻ địch tóm (Grab-type Enemy):**
+  * Quái vật tuần tra có vòng phát hiện đặc biệt. Khi chạm vào sẽ đưa Player vào trạng thái `GRABBED` thay vì gây sát thương bình thường.
+* `[ ]` **Khóa điều khiển:**
+  * Vô hiệu hóa phím bấm chạy/nhảy/lướt/chém thường của Player.
 
-### 2. Cơ Chế QTE Struggle (Nhấn Phím Kháng Cự)
-* **Thanh trạng thái Struggle Bar:**
-  * Xuất hiện một thanh trượt UI phía trên đầu nhân vật.
-  * Có mốc thời gian đếm ngược (ví dụ: `5 giây`).
-* **Logic bấm phím:**
-  * Người chơi phải nhấn phím `Space` hoặc `E` liên tục và nhanh nhất có thể.
-  * Mỗi lần nhấn phím thành công sẽ đẩy thanh đo Struggle Bar lên.
-  * Thanh đo tự động tụt giảm dần theo thời gian (decay rate) để tạo áp lực.
-* **Kết quả:**
-  * **Thành công (QTE Success):** Thanh đo đầy trước khi hết giờ -> Kích hoạt đòn phản công, đẩy kẻ địch ra xa, gây cho chúng sát thương nhẹ, người chơi được giải thoát và có 1 giây miễn sát thương để hồi phục vị trí.
-  * **Thất bại (QTE Failure):** Hết giờ mà thanh đo chưa đầy -> Máu của nhân vật giảm ngay lập tức về 0, chuyển sang trạng thái `DEFEATED` và bắt đầu chuyển cảnh.
+### 2. Cơ Chế QTE Struggle
+* `[ ]` **Struggle Bar UI:**
+  * Xuất hiện thanh đo QTE trên đầu Player kèm thời gian đếm ngược (ví dụ 5s).
+* `[ ]` **Spam nút giải thoát:**
+  * Người chơi nhấn nhanh phím `Space` hoặc `E` liên tục để tăng thanh đo (thanh đo tự động giảm dần theo thời gian).
+* `[ ]` **Kết quả:**
+  * **QTE Thành công:** Đẩy lùi kẻ địch, hồi nhẹ máu, thoát về trạng thái `MOVE`.
+  * **QTE Thất bại:** Máu lập tức về `0`, chuyển trạng thái `DEFEATED` và bắt đầu hồi sinh.
 
 ---
 
-## Giai Đoạn 4: Trình Phát Cảnh Thua Cuộc & Chuyển Cảnh (Defeat Scene & Transition)
+## Giai Đoạn 5: Hồi Sinh & Chuyển Cảnh (Respawn & Fade Transitions)
 
-### 1. Quản Lý Chuyển Cảnh Toàn Cục (GameManager)
-* Autoload `GameManager` duy trì trạng thái nhân vật khi chuyển giao giữa các màn chơi.
-* Lắng nghe tín hiệu `player_defeated`.
-
-### 2. Phân Cảnh Bị Đánh Bại (Defeat Scene)
-* Tải tệp cảnh `defeat_scene.tscn`.
-* Làm mờ màn hình chơi game (Fade out) và chuyển tiếp camera.
-* Chạy các phân cảnh hoạt họa Pixel Art (trước mắt sử dụng các hình ảnh placeholder chuyển động kèm chữ mô tả kịch bản).
-* Hiển thị bảng điều khiển UI Game Over:
-  * **[Retry]:** Tải lại cảnh màn chơi tại checkpoint gần nhất, áp dụng Debuff lên nhân vật.
-  * **[Main Menu]:** Quay lại màn hình chính của game.
+* `[x]` **Màn hình tối đen (Screen Fade to Black):**
+  * Thêm màn chắn `ScreenFade` (`ColorRect` đen bán trong suốt) phủ trên HUD.
+  * Khi Player chết (`player_defeated`), dùng Tween làm tối đen toàn màn hình trong `0.5` giây.
+* `[x]` **Hồi sinh hồi máu:**
+  * Đưa Player trở lại điểm xuất phát (`spawn_point = global_position` lúc load game) và triệt tiêu vận tốc.
+  * **Hồi phục hoàn toàn sinh lực:** Tăng `+9999` máu để đầy bình trước khi áp dụng Debuff (80 HP tối đa).
+  * Chờ `0.2` giây rồi dùng Tween làm sáng màn hình trở lại trong `0.5` giây.
 
 ---
 
-## Giai Đoạn 5: Thiết Kế Màn Chơi Thử Nghiệm (Sandbox Room)
+## Giai Đoạn 6: Thiết Kế Màn Chơi Thử Nghiệm (Sandbox Room)
 
 ### 1. Bản Đồ Kiểm Thử (Sandbox Map)
-* Tạo màn chơi thử nghiệm sử dụng TileMap cơ bản:
-  * Vùng đất bằng phẳng để chạy thử tốc độ di chuyển.
-  * Các bậc thềm cao thấp để thử nghiệm cơ chế nhảy.
-  * Một Điểm Lưu Game (Save Point) để hồi phục máu và xóa Debuff.
-* **Bố trí Kẻ địch:**
-  * 1 Kẻ địch tuần tra thông thường (để kiểm tra chiến đấu, sát thương).
-  * 1 Kẻ địch đặc biệt có khả năng chụp tóm (để kiểm tra cơ chế QTE/Defeat).
+* `[x]` **Bề mặt địa hình:** Mặt đất phẳng dài xanh sẫm tại tọa độ Y = 500, có tường chặn 2 bên để giữ Player.
+* `[x]` **Bố trí Kẻ địch tĩnh (Hạt đậu đỏ):** Đặt tại `(400, 464)`. Gây `15` sát thương và kích hoạt đẩy lùi khi Player đụng phải. In ra thông báo nhận sát thương khi bị chém trúng.
+* `[x]` **Bố trí Vật phẩm nâng cấp (Hạt xanh lá):** Đặt tại `(800, 464)`. Giảm nửa thời gian hồi Dash khi ăn được.
+* `[ ]` **Bố trí Kẻ địch tóm (Grab Enemy):** *[Sắp triển khai]*
