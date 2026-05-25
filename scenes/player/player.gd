@@ -21,8 +21,8 @@ var knockback_timer = 0.0
 
 # Các thông số của kỹ năng Dash (Lướt nhanh)
 const DASH_SPEED = SPEED * 3.0 # Tốc độ lướt gấp 3 lần bình thường (600 px/s)
-const DASH_DURATION = 0.5 # Tổng thời gian lướt
-const DASH_ACTIVE_DURATION = 0.45 # 9/10 thời gian đầu (0.45s) là lướt chủ động & miễn sát thương
+const DASH_DURATION = 0.2 # Tổng thời gian lướt (0.2 giây)
+const DASH_ACTIVE_DURATION = 0.18 # 9/10 thời gian đầu (0.18s) là lướt chủ động & miễn sát thương
 const DASH_COOLDOWN = 0.8 # Thời gian hồi chiêu
 var dash_timer = 0.0
 var dash_cooldown_timer = 0.0
