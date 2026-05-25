@@ -20,7 +20,7 @@ func _physics_process(delta):
 	# Nếu đang bị giật lùi (knockback), để lực đẩy tự tiêu hao
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
-		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+		velocity.x = move_toward(velocity.x, 0, friction * delta)
 		if not is_on_floor():
 			velocity.y += gravity * delta
 		move_and_slide()

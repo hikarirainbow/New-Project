@@ -11,6 +11,9 @@ var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 # Trạng thái bị đẩy lùi (Knockback)
 var knockback_timer: float = 0.0
 
+# Lực ma sát giảm tốc khi dừng/bị đẩy lùi
+@export var friction: float = 1200.0
+
 # Các tín hiệu chung
 signal health_changed(new_health)
 signal actor_died

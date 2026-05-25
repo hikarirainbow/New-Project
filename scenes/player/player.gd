@@ -4,7 +4,6 @@ extends Actor
 const SPEED = 200.0
 const JUMP_VELOCITY = -380.0
 const ACCELERATION = 1000.0
-const FRICTION = 1200.0
 
 # Trạng thái nhân vật (FSM)
 enum State { MOVE, GRABBED, DEFEATED, DASH }
@@ -83,7 +82,7 @@ func handle_move_state(delta):
 
 	# Nếu đang chịu lực giật lùi (knockback), khóa phím điều khiển và giảm tốc dần
 	if knockback_timer > 0.0:
-		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+		velocity.x = move_toward(velocity.x, 0, friction * delta)
 		move_and_slide()
 		return
 
@@ -101,7 +100,7 @@ func handle_move_state(delta):
 			$Sprite2D.flip_h = direction < 0
 	else:
 		# Giảm tốc độ dần đều về 0 khi không nhấn phím di chuyển
-		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+		velocity.x = move_toward(velocity.x, 0, friction * delta)
 
 	move_and_slide()
 
