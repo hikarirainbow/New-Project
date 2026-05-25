@@ -1,8 +1,9 @@
 extends CanvasLayer
 
-@onready var health_bar = $Control/MarginContainer/VBoxContainer/HealthBar
+@onready var health_bar   = $Control/MarginContainer/VBoxContainer/HealthBar
 @onready var health_label = $Control/MarginContainer/VBoxContainer/HealthLabel
-@onready var screen_fade = $Control/ScreenFade
+@onready var key_label    = $Control/MarginContainer/VBoxContainer/KeyLabel
+@onready var screen_fade  = $Control/ScreenFade
 
 func _ready():
 	# Đợi một frame để chắc chắn rằng Player đã được khởi tạo trong Scene Tree
@@ -25,6 +26,8 @@ func setup_player(player):
 	player.health_changed.connect(_on_player_health_changed)
 	# Kết nối tín hiệu khi Player bị tiêu diệt
 	player.player_defeated.connect(_on_player_defeated)
+	# Kết nối tín hiệu khi Player nhặt chìa khóa
+	player.key_collected.connect(_on_key_collected)
 
 # Xử lý sự kiện khi máu Player thay đổi (nhận sát thương hoặc hồi máu)
 func _on_player_health_changed(new_health):
@@ -61,3 +64,11 @@ func _on_player_defeated():
 	# 3. Làm sáng lại màn hình (Fade to Transparent)
 	var fade_out_tween = create_tween()
 	fade_out_tween.tween_property(screen_fade, "color", Color(0, 0, 0, 0), 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+
+# Cập nhật HUD khi Player nhặt chìa khóa
+func _on_key_collected(key_name: String):
+	var player = get_tree().get_first_node_in_group("player")
+	if player and player.keys.size() > 0:
+		key_label.text = "Keys: " + ", ".join(player.keys)
+	else:
+		key_label.text = "Keys: None"

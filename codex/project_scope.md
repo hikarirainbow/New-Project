@@ -16,7 +16,9 @@ STATUS:
 - Melee (X, 0.1s, 50x10 at 20px offset, blue visual): DONE
 - Knockback (0.25s lock): DONE
 - Dash Item (Green, Y=464, CD -> 0.4s): DONE
-- Grab Enemy (Patrol/Dead states, raycast cliff/wall): DONE
+- Grab Enemy (PATROL/CHASE/DEAD states, raycast cliff/wall, 100px chase radius, wall-jump, CORPSE→Key pickup): DONE
 - QTE Struggle (Space/E spam, success pushback, fail death): PLANNED
+- Player Key Inventory (keys[], collect_key(), key_collected signal): DONE
+- HUD Key Display (KeyLabel, shows collected keys): DONE
 - Wall Slide/Jump: PLANNED
-- Sandbox (Platforms, Red Bean, Patrol Enemy, Dash Upgrade): DONE
+- Sandbox (Platforms, Red Bean, Patrol/Chase Enemy, Dash Upgrade): DONE

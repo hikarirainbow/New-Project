@@ -29,6 +29,11 @@ var attack_timer = 0.0
 
 # Tín hiệu đặc thù phát đi khi người chơi chết
 signal player_defeated
+# Tín hiệu phát khi nhặt chìa khóa
+signal key_collected(key_name: String)
+
+# Kho lưu trữ chìa khóa
+var keys: Array[String] = []
 
 var spawn_point: Vector2
 
@@ -209,6 +214,12 @@ func respawn():
 func upgrade_dash_cooldown():
 	dash_cooldown = dash_cooldown / 2.0
 	print("Dash cooldown upgraded! New cooldown: ", dash_cooldown)
+
+# Thu thập chìa khóa từ xác quái vật
+func collect_key(key_name: String):
+	keys.append(key_name)
+	emit_signal("key_collected", key_name)
+	print("Key collected: ", key_name, " | Total keys: ", keys)
 
 # Bắt đầu kỹ năng tấn công cận chiến
 func start_attack():

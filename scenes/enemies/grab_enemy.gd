@@ -1,23 +1,28 @@
 extends Actor
 
-# Tốc độ di chuyển tuần tra của quái vật
-const SPEED = 60.0
+const SPEED         = 60.0
+const CHASE_SPEED   = 90.0
 const CONTACT_DAMAGE = 15
+const CHASE_RADIUS  = 100.0
 
-# Bộ máy trạng thái (FSM) cơ bản
-enum State { PATROL, DEAD }
+enum State { PATROL, CHASE, DEAD }
 var current_state = State.PATROL
 
-# Hướng di chuyển: 1 = Phải, -1 = Trái
 var direction = 1
+var player_ref: Node = null
 
-# Các node con RayCast dò tìm tường và hố sâu
-@onready var edge_detector_right = $RayCast2D_EdgeRight
-@onready var edge_detector_left = $RayCast2D_EdgeLeft
-@onready var wall_detector = $RayCast2D_Wall
+@onready var edge_right  = $RayCast2D_EdgeRight
+@onready var edge_left   = $RayCast2D_EdgeLeft
+@onready var wall_ray    = $RayCast2D_Wall
+
+func _ready():
+	add_to_group("enemies")
+	# Cache player reference once
+	await get_tree().process_frame
+	player_ref = get_tree().get_first_node_in_group("player")
 
 func _physics_process(delta):
-	# Nếu đang bị giật lùi (knockback), để lực đẩy tự tiêu hao
+	# Knockback processing (shared from Actor)
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
@@ -27,72 +32,121 @@ func _physics_process(delta):
 		return
 
 	match current_state:
-		State.PATROL:
-			handle_patrol_state(delta)
-		State.DEAD:
-			handle_dead_state(delta)
+		State.PATROL: _patrol(delta)
+		State.CHASE:  _chase(delta)
+		State.DEAD:   _dead(delta)
 
-# Xử lý logic trạng thái tuần tra (PATROL)
-func handle_patrol_state(delta):
-	# Áp dụng trọng lực
+# ── PATROL ──────────────────────────────────────────────────────────────────
+func _patrol(delta):
 	if not is_on_floor():
 		velocity.y += gravity * delta
 
-	# Kiểm tra xem có cần quay đầu (gặp tường hoặc mép vực) không
-	var should_flip = false
+	# Transition → CHASE if player is within radius
+	if player_ref and global_position.distance_to(player_ref.global_position) <= CHASE_RADIUS:
+		current_state = State.CHASE
+		return
 
-	# 1. Dò tường phía trước hướng đi
-	wall_detector.target_position.x = direction * 24.0
-	wall_detector.force_raycast_update()
-	if wall_detector.is_colliding():
+	var should_flip = false
+	wall_ray.target_position.x = direction * 24.0
+	wall_ray.force_raycast_update()
+	if wall_ray.is_colliding():
 		should_flip = true
 
-	# 2. Dò mép hố (vực sâu) để quay đầu tránh bị rơi xuống
 	if is_on_floor():
-		if direction == 1 and not edge_detector_right.is_colliding():
+		if direction == 1 and not edge_right.is_colliding():
 			should_flip = true
-		elif direction == -1 and not edge_detector_left.is_colliding():
+		elif direction == -1 and not edge_left.is_colliding():
 			should_flip = true
 
-	# Quay đầu nếu thỏa mãn điều kiện
 	if should_flip:
 		direction = -direction
-		# Lật hình ảnh Sprite
 		if has_node("Sprite2D"):
 			$Sprite2D.flip_h = direction < 0
 
-	# Di chuyển theo hướng hiện tại
 	velocity.x = direction * SPEED
 	move_and_slide()
+	_apply_contact_damage()
 
-	# Xử lý va chạm: Nếu đâm trúng Player, gây sát thương
-	for i in get_slide_collision_count():
-		var collision = get_slide_collision(i)
-		var collider = collision.get_collider()
-		if collider.is_in_group("player"):
-			if collider.has_method("take_damage"):
-				collider.take_damage(CONTACT_DAMAGE, global_position)
+# ── CHASE ───────────────────────────────────────────────────────────────────
+func _chase(delta):
+	if not player_ref:
+		current_state = State.PATROL
+		return
 
-# Xử lý logic trạng thái chết (DEAD)
-func handle_dead_state(delta):
-	# Chỉ rơi xuống đất nếu đang ở trên không trung
+	var dist = global_position.distance_to(player_ref.global_position)
+
+	# Return to patrol when player escapes radius
+	if dist > CHASE_RADIUS:
+		current_state = State.PATROL
+		return
+
+	if not is_on_floor():
+		velocity.y += gravity * delta
+
+	# Move towards player horizontally
+	var dx = player_ref.global_position.x - global_position.x
+	direction = 1 if dx > 0 else -1
+	if has_node("Sprite2D"):
+		$Sprite2D.flip_h = direction < 0
+
+	# Simple wall-jump: if blocked by wall and player is above, jump
+	wall_ray.target_position.x = direction * 24.0
+	wall_ray.force_raycast_update()
+	if wall_ray.is_colliding() and is_on_floor():
+		var dy = player_ref.global_position.y - global_position.y
+		if dy < -10.0:
+			velocity.y = -250.0
+
+	velocity.x = direction * CHASE_SPEED
+	move_and_slide()
+	_apply_contact_damage()
+
+# ── DEAD (Corpse) ────────────────────────────────────────────────────────────
+func _dead(delta):
 	if not is_on_floor():
 		velocity.y += gravity * delta
 	velocity.x = 0
 	move_and_slide()
 
-# Ghi đè hàm die() của Actor
+# ── HELPERS ─────────────────────────────────────────────────────────────────
+func _apply_contact_damage():
+	for i in get_slide_collision_count():
+		var col = get_slide_collision(i)
+		var body = col.get_collider()
+		if body.is_in_group("player") and body.has_method("take_damage"):
+			body.take_damage(CONTACT_DAMAGE, global_position)
+
+# ── DEATH (override Actor.die) ───────────────────────────────────────────────
 func die():
 	current_state = State.DEAD
-	
-	# Vô hiệu hóa va chạm với Player (chỉ giữ lại va chạm nền đất để không rơi xuyên map)
+
+	# Remove enemy collision; keep floor collision so corpse doesn't fall through
 	collision_layer = 0
-	collision_mask = 1
-	
-	print("Kẻ địch tuần tra đã chết!")
-	
-	# Hiệu ứng tan biến dần (fade-out)
-	var tween = create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, 0.4)
-	# Tự giải phóng bộ nhớ sau khi tan biến xong
-	tween.finished.connect(queue_free)
+	collision_mask  = 1
+
+	# Turn gray (corpse visual)
+	if has_node("Sprite2D"):
+		$Sprite2D.modulate = Color(0.5, 0.5, 0.5, 1.0)
+
+	print("GrabEnemy died → CORPSE state")
+
+	# Dynamically create a pickup Area2D for the key
+	var area = Area2D.new()
+	area.name = "CorpseArea"
+
+	var shape_node = CollisionShape2D.new()
+	var circle = CircleShape2D.new()
+	circle.radius = 20.0
+	shape_node.shape = circle
+	area.add_child(shape_node)
+
+	add_child(area)
+	area.body_entered.connect(_on_corpse_body_entered)
+
+func _on_corpse_body_entered(body):
+	if body.is_in_group("player") and body.has_method("collect_key"):
+		body.collect_key("Boss Key")
+		# Fade-out and free corpse
+		var tw = create_tween()
+		tw.tween_property(self, "modulate:a", 0.0, 0.35)
+		tw.finished.connect(queue_free)
