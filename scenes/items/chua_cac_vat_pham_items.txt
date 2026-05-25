@@ -1,0 +1,2 @@
+Thư mục này chứa cảnh (scenes) và mã nguồn (scripts) của các vật phẩm trong game.
+Ví dụ: vật phẩm nâng cấp kỹ năng, hồi máu, chìa khóa, v.v.

@@ -23,7 +23,7 @@ var knockback_timer = 0.0
 const DASH_SPEED = SPEED * 3.0 # Tốc độ lướt gấp 3 lần bình thường (600 px/s)
 const DASH_DURATION = 0.2 # Tổng thời gian lướt (0.2 giây)
 const DASH_ACTIVE_DURATION = 0.18 # 9/10 thời gian đầu (0.18s) là lướt chủ động & miễn sát thương
-const DASH_COOLDOWN = 0.8 # Thời gian hồi chiêu
+var dash_cooldown = 0.8 # Thời gian hồi chiêu (dạng biến để có thể nâng cấp)
 var dash_timer = 0.0
 var dash_cooldown_timer = 0.0
 var dash_direction = Vector2.ZERO
@@ -98,7 +98,7 @@ func handle_move_state(delta):
 func start_dash():
 	current_state = State.DASH
 	dash_timer = 0.0
-	dash_cooldown_timer = DASH_COOLDOWN
+	dash_cooldown_timer = dash_cooldown
 	
 	# Xác định hướng lướt dựa trên phím di chuyển đang giữ
 	var dir = Input.get_axis("move_left", "move_right")
@@ -214,3 +214,8 @@ func respawn():
 	current_health += 9999
 	apply_debuff()
 	current_state = State.MOVE
+
+# Nâng cấp kỹ năng lướt: Giảm một nửa thời gian hồi chiêu
+func upgrade_dash_cooldown():
+	dash_cooldown = dash_cooldown / 2.0
+	print("Dash cooldown upgraded! New cooldown: ", dash_cooldown)
