@@ -18,6 +18,11 @@ ATTACK: 0.15s duration per strike. 3-hit combo variation. Key=X. Combo reset del
 - Hit 1: 40x50px in front (blue indicator).
 - Hit 2: 40x50px in front + 70x40px above head (green indicators).
 - Hit 3: 50x30px in front (red indicator).
+COMPONENTS (Component-based architecture to reduce player.gd complexity):
+- AttackComponent (Node2D): Manages the 3-hit melee combo mechanics, dynamic shape scaling, and visual indicators.
+- DashComponent (Node): Manages dash cooldowns, speed calculations, movement locks, and iframes.
+- LightComponent (Node2D): Configures and instantiates the PointLight2D radial flashlight.
+
 
 ## Upgrade Item
 TYPE: Dash CD Halver (Green Circle)
@@ -82,3 +87,4 @@ PERSISTENCE_TRICK (RoomManager Autoload):
 - Enabled 2D physics interpolation and configured canvas_items stretch mode with Nearest texture filtering to eliminate movement jitter and enable smooth subpixel movement.
 - Created RoomManager autoload and RoomPortal to implement seamless room transitions without reloading/killing the player.
 - Implemented a smooth quick screen fade-out and fade-in (0.15s each) during room transitions to cover the scene swap.
+- Refactored player.gd using a Component-based architecture, extracting AttackComponent, DashComponent, and LightComponent to decrease code complexity.
