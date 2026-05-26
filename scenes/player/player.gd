@@ -23,6 +23,7 @@ var qte_progress: float = 0.0
 var qte_target: float = 100.0
 var last_qte_key: String = ""
 var _force_triple_knockback: bool = false
+var qte_indicator: Node2D = null
 
 # Tín hiệu đặc thù phát đi khi người chơi chết
 signal player_defeated
@@ -43,6 +44,14 @@ func _ready():
 	if has_node("Camera2D"): $Camera2D.zoom = Vector2(1.2, 1.2)
 	# Ẩn và khóa chuột vào màn hình khi bắt đầu chơi game
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	
+	# Khởi tạo và đính kèm QTEIndicator trên đầu nhân vật (cách 50px so với đỉnh sprite)
+	qte_indicator = Node2D.new()
+	qte_indicator.name = "QTEIndicator"
+	qte_indicator.set_script(load("res://scenes/player/qte_indicator.gd"))
+	qte_indicator.visible = false
+	qte_indicator.position = Vector2(0, -82) # Y = -32 (đỉnh sprite) - 50px = -82
+	add_child(qte_indicator)
 
 func _physics_process(delta):
 	if knockback_timer > 0.0:
@@ -139,9 +148,15 @@ func handle_grabbed_state(delta):
 	# Suy giảm tiến trình QTE theo thời gian (decay)
 	qte_progress = max(0.0, qte_progress - delta * 15.0)
 	
-	var hud = get_tree().get_first_node_in_group("hud")
-	if hud:
-		hud.update_qte(qte_progress)
+	# Xác định phím kế tiếp cần spam để hướng dẫn người chơi
+	var next_key = "any"
+	if last_qte_key == "left":
+		next_key = "right"
+	elif last_qte_key == "right":
+		next_key = "left"
+		
+	if qte_indicator:
+		qte_indicator.set_qte_state(qte_progress, qte_target, next_key)
 		
 	# Kiểm tra nút nhấn spam di chuyển (A / D hoặc Mũi tên Trái / Phải)
 	var left_pressed = Input.is_action_just_pressed("move_left")
@@ -158,15 +173,21 @@ func handle_grabbed_state(delta):
 			
 		if valid_input:
 			qte_progress = min(qte_target, qte_progress + 10.0)
-			if hud:
-				hud.update_qte(qte_progress)
-				hud.trigger_qte_shake()
+			
+			var next_after_press = "any"
+			if last_qte_key == "left":
+				next_after_press = "right"
+			elif last_qte_key == "right":
+				next_after_press = "left"
+				
+			if qte_indicator:
+				qte_indicator.set_qte_state(qte_progress, qte_target, next_after_press, 8.0)
 				
 	# Nếu đã đủ tiến trình thoát khỏi khống chế
 	if qte_progress >= qte_target:
 		current_state = State.MOVE
-		if hud:
-			hud.hide_qte()
+		if qte_indicator:
+			qte_indicator.visible = false
 		# Cho người chơi 0.5 giây bất tử để thoát đi an toàn
 		is_invincible = true
 		invincibility_timer = 0.5
@@ -178,9 +199,9 @@ func start_qte():
 	current_state = State.GRABBED
 	qte_progress = 0.0
 	last_qte_key = ""
-	var hud = get_tree().get_first_node_in_group("hud")
-	if hud:
-		hud.show_qte(qte_target)
+	if qte_indicator:
+		qte_indicator.visible = true
+		qte_indicator.set_qte_state(0.0, qte_target, "any")
 
 # Ghi đè hàm apply_knockback từ Actor để hỗ trợ knockback QTE mạnh gấp 3 lần
 func apply_knockback(source_position: Vector2, force: float = 250.0):
@@ -270,9 +291,8 @@ func respawn():
 	dash_component.reset()
 	
 	# Đảm bảo ẩn thanh QTE nếu có khi hồi sinh
-	var hud = get_tree().get_first_node_in_group("hud")
-	if hud:
-		hud.hide_qte()
+	if qte_indicator:
+		qte_indicator.visible = false
 
 # Nâng cấp kỹ năng lướt: Giảm một nửa thời gian hồi chiêu
 func upgrade_dash_cooldown():
