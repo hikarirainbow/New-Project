@@ -42,7 +42,7 @@ PLATFORMS: random at rows 16, 13, 10, 7 (4-6 platforms each, width 2-4 tiles, 1 
 ENEMIES: GrabEnemy (640,592 -> falls to floor)
 ITEMS: DashUpgrade (960,592)
 TILE_VISUAL: brown fill Color(0.45,0.26,0.08) + black border 1.5px
-LIGHTING: CanvasModulate Color(0.25, 0.18, 0.35) moderate ambient purple. Player PointLight2D uses a 384x384 radial smoothstep texture (scale 2.5 -> 960px diameter) with smooth step fall-off. Shadows are enabled. Tiles are set to light_mask=2 and PointLight2D to range_item_cull_mask=1 to keep tiles completely unlit by the flashlight, while shadow_item_cull_mask=3 and occluder_light_mask=2 allow tiles to cast shadows.
+LIGHTING: CanvasModulate Color(8.0 / 255.0, 8.0 / 255.0, 8.0 / 255.0) dark overlay (brightness around 8/255). Player PointLight2D uses a 384x384 radial smoothstep texture (scale 2.5 -> 960px diameter) with smooth step fall-off. Shadows are enabled. Tiles are set to light_mask=2 and PointLight2D to range_item_cull_mask=1 to keep tiles completely unlit by the flashlight, while shadow_item_cull_mask=3 and occluder_light_mask=2 allow tiles to cast shadows.
 OCCLUDERS: LightOccluder2D on MapTile with size 32x32px. occluder_light_mask = 2.
 BACKGROUND: ColorRect Color(0.12, 0.08, 0.2) dark purple background canvas.
 SPAWNER: Procedural spawner maintaining at least 5 alive GrabEnemies. Spawn positions are ground tiles with empty cells above, >300px distance threshold.
@@ -65,3 +65,6 @@ STYLE: Buttons flat, hover shows StyleBoxFlat border_width_bottom=2px
 - Removed GPU-based enemy shadow shroud shader (monsters now render normally under standard Godot lighting).
 - Deferred CollisionShape updates on enemy death to resolve flushing queries error.
 - Deferred key pickup Area2D creation on enemy death using call_deferred() to fix physics flushing query error.
+
+### 2026-05-26
+- Reduced ambient light (CanvasModulate) brightness in dark areas to 8/255 (nearly pitch-black overlay).

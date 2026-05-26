@@ -23,7 +23,7 @@ func _physics_process(_delta: float) -> void:
 # ── AMBIENT DARKNESS ─────────────────────────────────────────────────────────
 func _setup_darkness() -> void:
 	var canvas_modulate = CanvasModulate.new()
-	canvas_modulate.color = Color(0.25, 0.18, 0.35) # Môi trường tối màu tím nhẹ dịu mắt, tránh đen kịt
+	canvas_modulate.color = Color(8.0 / 255.0, 8.0 / 255.0, 8.0 / 255.0) # Vùng tối đen kịt (khoảng 8/255)
 	add_child(canvas_modulate)
 
 func _setup_background() -> void:
