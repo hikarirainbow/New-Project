@@ -160,9 +160,9 @@ func handle_grabbed_state(delta):
 	
 	move_and_slide()
 	
-	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier
+	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier (5x base rate = 75.0)
 	var decay_multiplier = corruption_component.get_qte_decay_multiplier() if corruption_component else 2.0
-	qte_progress = max(0.0, qte_progress - delta * 15.0 * decay_multiplier)
+	qte_progress = max(0.0, qte_progress - delta * 75.0 * decay_multiplier)
 	
 	# Check for close-range (5px) enemy H-scene trigger
 	if not _h_scene_active:
@@ -220,7 +220,7 @@ func handle_grabbed_state(delta):
 		is_invincible = true
 		invincibility_timer = 0.5
 		if has_node("Sprite2D"):
-			$Sprite2D.modulate.a = 1.0
+			$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
 # Initialize QTE sequence
 func start_qte():
@@ -228,6 +228,8 @@ func start_qte():
 	qte_progress = 0.0
 	last_qte_key = ""
 	_h_scene_active = false
+	if has_node("Sprite2D"):
+		$Sprite2D.modulate = Color(1.0, 1.0, 0.0, 1.0) # Modulate yellow for testing visual state identification
 	if qte_indicator:
 		qte_indicator.visible = true
 		qte_indicator.set_qte_state(0.0, qte_target, "any")
@@ -320,7 +322,7 @@ func respawn():
 	invincibility_timer = 0.0
 	is_invincible = false
 	if has_node("Sprite2D"):
-		$Sprite2D.modulate.a = 1.0
+		$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	current_health += 9999
 	apply_debuff()
 	current_state = State.MOVE
