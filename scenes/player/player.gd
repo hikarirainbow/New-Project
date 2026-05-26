@@ -164,13 +164,14 @@ func handle_grabbed_state(delta):
 	var decay_multiplier = corruption_component.get_qte_decay_multiplier() if corruption_component else 2.0
 	qte_progress = max(0.0, qte_progress - delta * 22.5 * decay_multiplier)
 	
-	# Check for close-range (5px) enemy H-scene trigger
+	# Check for close-range (5px equivalent horizontal, 20px vertical) enemy H-scene trigger
 	if not _h_scene_active:
 		var enemies = get_tree().get_nodes_in_group("enemies")
 		for enemy in enemies:
 			if is_instance_valid(enemy) and enemy.has_method("is_alive") and enemy.is_alive():
-				var dist = global_position.distance_to(enemy.global_position)
-				if dist <= 5.0:
+				var dx = abs(global_position.x - enemy.global_position.x)
+				var dy = abs(global_position.y - enemy.global_position.y)
+				if dx <= 10.0 and dy <= 20.0:
 					_h_scene_active = true
 					emit_signal("h_scene_triggered", enemy)
 					if has_node("Sprite2D"):
