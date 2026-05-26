@@ -36,6 +36,7 @@ func _setup_light() -> void:
 	light.texture_scale = texture_scale
 	light.shadow_enabled = true
 	light.shadow_filter = PointLight2D.SHADOW_FILTER_PCF5
+	light.shadow_filter_smooth = 1.5
 	light.shadow_color = shadow_color
 	light.range_item_cull_mask = 1  # Chỉ chiếu sáng thực thể ở Layer 1
 	light.shadow_item_cull_mask = 3  # Đổ bóng từ cả Layer 1 và Layer 2
