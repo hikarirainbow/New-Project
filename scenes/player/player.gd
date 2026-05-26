@@ -346,3 +346,24 @@ func collect_key(key_name: String):
 	keys.append(key_name)
 	emit_signal("key_collected", key_name)
 	print("Key collected: ", key_name, " | Total keys: ", keys)
+
+# Trigger hit stop (time freeze) on successful impact
+func trigger_hit_stop(duration: float = 0.08, time_scale: float = 0.05) -> void:
+	Engine.time_scale = time_scale
+	await get_tree().create_timer(duration, true, false, true).timeout
+	Engine.time_scale = 1.0
+
+# Shake camera opposite to slash direction
+func shake_camera(direction_x: float, intensity: float = 8.0, duration: float = 0.15) -> void:
+	var camera = get_node_or_null("Camera2D")
+	if camera:
+		camera.offset = Vector2(-direction_x * intensity, 0.0)
+		var tween = create_tween().set_ignore_time_scale(true)
+		tween.tween_property(camera, "offset", Vector2.ZERO, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+# Apply recoil pushback on melee hit
+func apply_melee_recoil(direction_x: float, force: float = 160.0) -> void:
+	# Recoil pushback in opposite direction of slash
+	velocity.x = -direction_x * force
+	move_and_slide()
+

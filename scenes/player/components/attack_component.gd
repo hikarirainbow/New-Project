@@ -97,6 +97,11 @@ func interrupt() -> void:
 		attack_timer = 0.0
 
 func _on_attack_body_entered(body: Node2D) -> void:
+	# Determine slash direction based on player facing direction
+	var is_facing_left = player.get_node("Sprite2D").flip_h if player.has_node("Sprite2D") else false
+	var slash_dir = -1.0 if is_facing_left else 1.0
+
+	# Case A: Hit an enemy or destructible object
 	if body.has_method("take_damage") and not bodies_hit_this_attack.has(body):
 		bodies_hit_this_attack.append(body)
 		var base_damage = 20
@@ -104,6 +109,26 @@ func _on_attack_body_entered(body: Node2D) -> void:
 			var corruption_node = player.get_node("CorruptionComponent")
 			base_damage = int(round(base_damage * corruption_node.get_attack_multiplier()))
 		body.take_damage(base_damage, player.global_position)
+		
+		# Melee impact effects: hit stop, slash-opposite camera shake, and recoil
+		if player.has_method("trigger_hit_stop"):
+			player.trigger_hit_stop(0.08, 0.05)
+		if player.has_method("shake_camera"):
+			player.shake_camera(slash_dir, 8.0, 0.15)
+		if player.has_method("apply_melee_recoil"):
+			player.apply_melee_recoil(slash_dir, 140.0)
+
+	# Case B: Hit a tile / wall (Environment Layer 1)
+	elif not body.has_method("take_damage") and not bodies_hit_this_attack.has(body):
+		bodies_hit_this_attack.append(body)
+		
+		# Tile impact feel
+		if player.has_method("trigger_hit_stop"):
+			player.trigger_hit_stop(0.05, 0.05)
+		if player.has_method("shake_camera"):
+			player.shake_camera(slash_dir, 5.0, 0.12)
+		if player.has_method("apply_melee_recoil"):
+			player.apply_melee_recoil(slash_dir, 160.0)
 
 func _draw() -> void:
 	if attack_timer > 0.0:
