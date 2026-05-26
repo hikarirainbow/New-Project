@@ -20,8 +20,10 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
-		# Trigger the transition via RoomManager Autoload deferredly
-		RoomManager.call_deferred("transition_to_room", target_room_path, target_portal_id)
+		# Trigger the transition via RoomManager Autoload deferredly using absolute path to avoid compile-time parse errors
+		var room_mgr = get_node_or_null("/root/RoomManager")
+		if room_mgr:
+			room_mgr.call_deferred("transition_to_room", target_room_path, target_portal_id)
 
 func _draw() -> void:
 	# Draw the portal as 2 white tiles (32x64px)
