@@ -58,6 +58,7 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 		# Reset camera smoothing and limits
 		var cam = player_instance.get_node_or_null("Camera2D")
 		if cam:
+			cam.make_current() # Force this camera to be active in the new scene
 			cam.position_smoothing_enabled = false
 			cam.limit_left = 0
 			cam.limit_top = 0
