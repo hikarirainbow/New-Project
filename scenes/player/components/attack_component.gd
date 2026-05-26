@@ -1,13 +1,36 @@
 class_name AttackComponent
 extends Node2D
 
-const ATTACK_DURATION = 0.15
-const COMBO_RESET_DELAY = 0.5
+@export_group("Attack Timings")
+@export var base_attack_duration: float = 0.15
+@export var base_combo_reset_delay: float = 0.5
+@export var upgraded_attack_duration: float = 0.10 # Skill B
+@export var upgraded_combo_reset_delay: float = 0.35 # Skill B
 
-var attack_timer = 0.0
-var combo_reset_timer = 0.0
-var combo_index = 0
-var current_combo_index = 0
+@export_group("Melee Damage & Skills")
+@export var base_damage: int = 20
+@export var skill_a_damage_multiplier: float = 1.5
+@export var skill_c_crit_chance: float = 0.20
+@export var skill_c_crit_multiplier: float = 2.0
+
+@export_group("Enemy Hit Feel")
+@export var enemy_hit_stop_duration: float = 0.08
+@export var enemy_hit_stop_time_scale: float = 0.05
+@export var enemy_hit_camera_shake: float = 8.0
+@export var enemy_hit_camera_shake_duration: float = 0.15
+@export var enemy_hit_recoil_force: float = 140.0
+
+@export_group("Environment Hit Feel")
+@export var env_hit_stop_duration: float = 0.05
+@export var env_hit_stop_time_scale: float = 0.05
+@export var env_hit_camera_shake: float = 5.0
+@export var env_hit_camera_shake_duration: float = 0.12
+@export var env_hit_recoil_force: float = 160.0
+
+var attack_timer: float = 0.0
+var combo_reset_timer: float = 0.0
+var combo_index: int = 0
+var current_combo_index: int = 0
 
 var bodies_hit_this_attack: Array[Node] = []
 var attack_area_collision: CollisionShape2D = null
@@ -23,7 +46,7 @@ func _ready() -> void:
 		
 		# Dynamically initialize secondary collision shape for 2nd hit combo variation
 		attack_shape_2 = CollisionShape2D.new()
-		var rect2 = RectangleShape2D.new()
+		var rect2 := RectangleShape2D.new()
 		attack_shape_2.shape = rect2
 		attack_shape_2.disabled = true
 		attack_area.add_child(attack_shape_2)
@@ -56,9 +79,9 @@ func can_attack() -> bool:
 func start_attack() -> void:
 	current_combo_index = combo_index
 	
-	var duration = ATTACK_DURATION
+	var duration := base_attack_duration
 	if player and player.skill_component and player.skill_component.is_skill_unlocked("B"):
-		duration = 0.10 # Faster attack duration (0.10s instead of 0.15s)
+		duration = upgraded_attack_duration
 		
 	attack_timer = duration
 	combo_reset_timer = 0.0
@@ -105,9 +128,9 @@ func end_attack() -> void:
 		
 	combo_index = (current_combo_index + 1) % 3
 	
-	var reset_delay = COMBO_RESET_DELAY
+	var reset_delay := base_combo_reset_delay
 	if player and player.skill_component and player.skill_component.is_skill_unlocked("B"):
-		reset_delay = 0.35 # Quicker combo chain window reset
+		reset_delay = upgraded_combo_reset_delay
 		
 	combo_reset_timer = reset_delay
 	queue_redraw()
@@ -127,30 +150,29 @@ func _on_attack_body_entered(body: Node2D) -> void:
 	# Case A: Hit an enemy or destructible object
 	if body.has_method("take_damage") and not bodies_hit_this_attack.has(body):
 		bodies_hit_this_attack.append(body)
-		var base_damage = 20
-		if player and player.has_node("CorruptionComponent"):
-			var corruption_node = player.get_node("CorruptionComponent")
-			base_damage = int(round(base_damage * corruption_node.get_attack_multiplier()))
+		var dmg := base_damage
+		if player and player.corruption_component:
+			dmg = int(round(dmg * player.corruption_component.get_attack_multiplier()))
 			
 		# Apply Skill A: +50% Base Damage multiplier
 		if player and player.skill_component and player.skill_component.is_skill_unlocked("A"):
-			base_damage = int(round(base_damage * 1.5))
+			dmg = int(round(dmg * skill_a_damage_multiplier))
 			
 		# Apply Skill C: Critical Strike (20% chance to deal 2x damage)
 		if player and player.skill_component and player.skill_component.is_skill_unlocked("C"):
-			if randf() <= 0.20:
-				base_damage *= 2
-				print("[COMBAT] CRITICAL! Damage doubled to: ", base_damage)
+			if randf() <= skill_c_crit_chance:
+				dmg = int(dmg * skill_c_crit_multiplier)
+				print("[COMBAT] CRITICAL! Damage doubled to: ", dmg)
 				
-		body.take_damage(base_damage, player.global_position)
+		body.take_damage(dmg, player.global_position)
 		
 		# Melee impact effects: hit stop, slash-opposite camera shake, and recoil
 		if player.has_method("trigger_hit_stop"):
-			player.trigger_hit_stop(0.08, 0.05)
+			player.trigger_hit_stop(enemy_hit_stop_duration, enemy_hit_stop_time_scale)
 		if player.has_method("shake_camera"):
-			player.shake_camera(slash_dir, 8.0, 0.15)
+			player.shake_camera(slash_dir, enemy_hit_camera_shake, enemy_hit_camera_shake_duration)
 		if player.has_method("apply_melee_recoil"):
-			player.apply_melee_recoil(slash_dir, 140.0)
+			player.apply_melee_recoil(slash_dir, enemy_hit_recoil_force)
 
 	# Case B: Hit a tile / wall (Environment Layer 1)
 	elif not body.has_method("take_damage") and not bodies_hit_this_attack.has(body):
@@ -158,11 +180,11 @@ func _on_attack_body_entered(body: Node2D) -> void:
 		
 		# Tile impact feel
 		if player.has_method("trigger_hit_stop"):
-			player.trigger_hit_stop(0.05, 0.05)
+			player.trigger_hit_stop(env_hit_stop_duration, env_hit_stop_time_scale)
 		if player.has_method("shake_camera"):
-			player.shake_camera(slash_dir, 5.0, 0.12)
+			player.shake_camera(slash_dir, env_hit_camera_shake, env_hit_camera_shake_duration)
 		if player.has_method("apply_melee_recoil"):
-			player.apply_melee_recoil(slash_dir, 160.0)
+			player.apply_melee_recoil(slash_dir, env_hit_recoil_force)
 
 func _draw() -> void:
 	if attack_timer > 0.0:
@@ -178,3 +200,4 @@ func _draw() -> void:
 			2:
 				var x_pos = -68.0 if is_facing_left else 18.0
 				draw_rect(Rect2(x_pos, -15.0, 50.0, 48.0), Color(0.85, 0.15, 0.15, 0.6))
+

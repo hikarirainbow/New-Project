@@ -14,7 +14,31 @@ var current_state = State.MOVE
 var is_debuffed = false
 
 # Invincibility frame settings
+@export_group("Invincibility & Flash")
 @export var damage_invincibility_duration: float = 0.5
+@export var flash_rate_divisor: int = 10
+@export var flash_threshold: int = 5
+@export var flash_opacity: float = 0.4
+
+@export_group("Struggling & QTE")
+@export var qte_indicator_offset: Vector2 = Vector2(0, -82)
+@export var default_camera_zoom: Vector2 = Vector2(1.2, 1.2)
+@export var fall_gravity_multiplier: float = 1.5
+@export var jump_cut_multiplier: float = 0.1
+@export var qte_decay_rate: float = 22.5
+@export var qte_trigger_range_x: float = 10.0
+@export var qte_trigger_range_y: float = 20.0
+@export var qte_mash_gain: float = 10.0
+@export var qte_upgraded_mash_gain: float = 15.0
+@export var qte_escape_invincibility_duration: float = 0.5
+
+@export_group("Health Values")
+@export var debuffed_max_health: int = 80
+@export var standard_max_health: int = 100
+
+@export_group("Combat Recoil")
+@export var melee_recoil_duration: float = 0.08
+
 var invincibility_timer = 0.0
 var is_invincible = false
 var recoil_timer: float = 0.0
@@ -47,13 +71,12 @@ var spawn_point: Vector2
 @onready var corruption_component = $CorruptionComponent
 @onready var skill_component = $SkillComponent
 
-
-
-func _ready():
+func _ready() -> void:
 	add_to_group("player")
 	spawn_point = global_position
-	if has_node("Camera2D"): $Camera2D.zoom = Vector2(1.2, 1.2)
-	# Capture mouse mouse mode on game start
+	if has_node("Camera2D"): 
+		$Camera2D.zoom = default_camera_zoom
+	# Capture mouse mode on game start
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	
 	# Programmatically instantiate and anchor QTE indicator above head (50px offset from sprite top)
@@ -61,10 +84,10 @@ func _ready():
 	qte_indicator.name = "QTEIndicator"
 	qte_indicator.set_script(load("res://scenes/player/qte_indicator.gd"))
 	qte_indicator.visible = false
-	qte_indicator.position = Vector2(0, -82) # Y = -32 (sprite top) - 50px = -82
+	qte_indicator.position = qte_indicator_offset
 	add_child(qte_indicator)
 
-func _physics_process(delta):
+func _physics_process(delta: float) -> void:
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
 
@@ -75,7 +98,7 @@ func _physics_process(delta):
 	if invincibility_timer > 0.0:
 		invincibility_timer -= delta
 		if has_node("Sprite2D"):
-			$Sprite2D.modulate.a = 0.4 if Engine.get_frames_drawn() % 10 < 5 else 1.0
+			$Sprite2D.modulate.a = flash_opacity if Engine.get_frames_drawn() % flash_rate_divisor < flash_threshold else 1.0
 		if invincibility_timer <= 0.0:
 			is_invincible = false
 			if has_node("Sprite2D"):
@@ -94,13 +117,13 @@ func _physics_process(delta):
 			climb_component.process_climb(delta)
 
 # Logic loop for free movement state
-func handle_move_state(delta):
+func handle_move_state(delta: float) -> void:
 	# If attacking, lock control direction and brake horizontal movement on floor
 	if attack_component.is_attacking():
 		if is_on_floor() and recoil_timer <= 0.0:
 			velocity.x = 0.0
 		if not is_on_floor():
-			var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
+			var active_gravity = gravity * fall_gravity_multiplier if velocity.y > 0 else gravity
 			velocity.y += active_gravity * delta
 		move_and_slide()
 		return
@@ -117,23 +140,23 @@ func handle_move_state(delta):
 
 	# Apply gravity acceleration
 	if not is_on_floor():
-		# Fall gravity is scaled by 1.5x to create a heavier platforming feel
-		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
+		# Fall gravity is scaled to create a heavier platforming feel
+		var active_gravity = gravity * fall_gravity_multiplier if velocity.y > 0 else gravity
 		velocity.y += active_gravity * delta
 		
 		# Auto-climb: trigger when holding directional input towards the wall we are facing
-		var dir = Input.get_axis("move_left", "move_right")
-		var is_facing_left = $Sprite2D.flip_h if has_node("Sprite2D") else false
-		var input_towards_wall = (dir < 0 and is_facing_left) or (dir > 0 and not is_facing_left)
+		var dir := Input.get_axis("move_left", "move_right")
+		var is_facing_left: bool = $Sprite2D.flip_h if has_node("Sprite2D") else false
+		var input_towards_wall := (dir < 0 and is_facing_left) or (dir > 0 and not is_facing_left)
 		if input_towards_wall:
 			var ledge_data = climb_component.check_ledge()
 			if not ledge_data.is_empty():
 				climb_component.start_climb(ledge_data.target_position)
 				return
 
-	# Variable jump height: release jump button early to scale upwards velocity by 0.1x (min jump ~5px)
+	# Variable jump height: release jump button early to scale upwards velocity (min jump ~5px)
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
-		velocity.y *= 0.1
+		velocity.y *= jump_cut_multiplier
 
 	# If locked in knockback state, damp horizontal velocity via friction and ignore inputs
 	if knockback_timer > 0.0:
@@ -154,7 +177,7 @@ func handle_move_state(delta):
 				has_double_jumped = true
 
 	# Query directional horizontal inputs
-	var direction = Input.get_axis("move_left", "move_right")
+	var direction := Input.get_axis("move_left", "move_right")
 	if direction != 0:
 		# Linearly interpolate horizontal velocity towards target max speed
 		velocity.x = move_toward(velocity.x, direction * SPEED, ACCELERATION * delta)
@@ -168,10 +191,10 @@ func handle_move_state(delta):
 	move_and_slide()
 
 # Logic loop for grabbed state (QTE active)
-func handle_grabbed_state(delta):
+func handle_grabbed_state(delta: float) -> void:
 	# Apply standard gravity in grabbed state
 	if not is_on_floor():
-		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
+		var active_gravity = gravity * fall_gravity_multiplier if velocity.y > 0 else gravity
 		velocity.y += active_gravity * delta
 
 	# Decay horizontal velocity via friction
@@ -179,27 +202,27 @@ func handle_grabbed_state(delta):
 	
 	move_and_slide()
 	
-	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier (halved rate = 22.5)
+	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier
 	var decay_multiplier = corruption_component.get_qte_decay_multiplier() if corruption_component else 2.0
-	qte_progress = max(0.0, qte_progress - delta * 22.5 * decay_multiplier)
+	qte_progress = max(0.0, qte_progress - delta * qte_decay_rate * decay_multiplier)
 	
-	# Check for close-range (5px equivalent horizontal, 20px vertical) enemy H-scene trigger
+	# Check for close-range enemy H-scene trigger
 	if not _h_scene_active:
 		var enemies = get_tree().get_nodes_in_group("enemies")
 		for enemy in enemies:
 			if is_instance_valid(enemy) and enemy.has_method("is_alive") and enemy.is_alive():
 				var dx = abs(global_position.x - enemy.global_position.x)
 				var dy = abs(global_position.y - enemy.global_position.y)
-				if dx <= 10.0 and dy <= 20.0:
+				if dx <= qte_trigger_range_x and dy <= qte_trigger_range_y:
 					_h_scene_active = true
-					emit_signal("h_scene_triggered", enemy)
+					h_scene_triggered.emit(enemy)
 					if has_node("Sprite2D"):
 						$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red for H-scene trigger
 					print("H-Scene Triggered with enemy: ", enemy.name)
 					break
 
 	# Calculate target input key instruction for HUD arrows
-	var next_key = "any"
+	var next_key := "any"
 	if last_qte_key == "left":
 		next_key = "right"
 	elif last_qte_key == "right":
@@ -209,11 +232,11 @@ func handle_grabbed_state(delta):
 		qte_indicator.set_qte_state(qte_progress, qte_target, next_key)
 		
 	# Check for alternation inputs (Left/Right inputs)
-	var left_pressed = Input.is_action_just_pressed("move_left")
-	var right_pressed = Input.is_action_just_pressed("move_right")
+	var left_pressed := Input.is_action_just_pressed("move_left")
+	var right_pressed := Input.is_action_just_pressed("move_right")
 	
 	if left_pressed or right_pressed:
-		var valid_input = false
+		var valid_input := false
 		if left_pressed and last_qte_key != "left":
 			last_qte_key = "left"
 			valid_input = true
@@ -222,12 +245,12 @@ func handle_grabbed_state(delta):
 			valid_input = true
 			
 		if valid_input:
-			var mash_gain = 10.0
+			var mash_gain := qte_mash_gain
 			if skill_component and skill_component.is_skill_unlocked("H"):
-				mash_gain = 15.0 # 50% stronger struggling power
+				mash_gain = qte_upgraded_mash_gain # stronger struggling power
 			qte_progress = min(qte_target, qte_progress + mash_gain)
 			
-			var next_after_press = "any"
+			var next_after_press := "any"
 			if last_qte_key == "left":
 				next_after_press = "right"
 			elif last_qte_key == "right":
@@ -241,14 +264,14 @@ func handle_grabbed_state(delta):
 		current_state = State.MOVE
 		if qte_indicator:
 			qte_indicator.visible = false
-		# Grant player 0.5s invincibility buffer upon escape
+		# Grant player invincibility buffer upon escape
 		is_invincible = true
-		invincibility_timer = 0.5
+		invincibility_timer = qte_escape_invincibility_duration
 		if has_node("Sprite2D"):
 			$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
 # Initialize QTE sequence
-func start_qte():
+func start_qte() -> void:
 	current_state = State.GRABBED
 	qte_progress = 0.0
 	last_qte_key = ""
@@ -259,12 +282,11 @@ func start_qte():
 		qte_indicator.visible = true
 		qte_indicator.set_qte_state(0.0, qte_target, "any")
 
-
 # Override Actor.apply_knockback to support scaled 3x force during grabbed/QTE triggers
-func apply_knockback(source_position: Vector2, force: float = 250.0):
+func apply_knockback(source_position: Vector2, force: float = 250.0) -> void:
 	var actual_force = force
 	var actual_upward = 0.0 # Standard knockback has zero Y bounce
-	var actual_duration = 0.25
+	var actual_duration = knockback_duration
 	
 	if _force_triple_knockback:
 		actual_force = force * 3.0
@@ -277,7 +299,7 @@ func apply_knockback(source_position: Vector2, force: float = 250.0):
 	knockback_timer = actual_duration
 
 # Defeated state logic loop
-func handle_defeated_state(delta):
+func handle_defeated_state(delta: float) -> void:
 	# Pull down to floor if airborne
 	if not is_on_floor():
 		velocity.y += gravity * delta
@@ -285,7 +307,7 @@ func handle_defeated_state(delta):
 	move_and_slide()
 
 # Process incoming damage (overrides parent Actor method to add state verification)
-func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
+func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO) -> void:
 	if current_state == State.DEFEATED or current_state == State.GRABBED or is_invincible:
 		return
 		
@@ -293,7 +315,7 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 	var final_amount = amount
 	if corruption_component:
 		final_amount = int(round(amount * corruption_component.get_defense_multiplier()))
-		# Subtract sanity when attacked (doubled penalty = 2x final damage)
+		# Subtract sanity when attacked (doubled penalty)
 		corruption_component.subtract_sanity(final_amount * 2.0)
 
 	# Interrupt active actions on hit
@@ -331,27 +353,27 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 			invincibility_timer = damage_invincibility_duration
 
 # Defeat sequence
-func die():
+func die() -> void:
 	current_state = State.DEFEATED
-	emit_signal("player_defeated")
+	player_defeated.emit()
 	print("Player has been defeated!")
 
 # Apply debuff status (respawn consequence)
-func apply_debuff():
+func apply_debuff() -> void:
 	is_debuffed = true
-	max_health = 80
+	max_health = debuffed_max_health
 	current_health = min(current_health, max_health)
-	emit_signal("health_changed", current_health)
+	health_changed.emit(current_health)
 
 # Clear debuff status (save room recovery)
-func remove_debuff():
+func remove_debuff() -> void:
 	is_debuffed = false
-	max_health = 100
+	max_health = standard_max_health
 	current_health = max_health
-	emit_signal("health_changed", current_health)
+	health_changed.emit(current_health)
 
 # Respawn player at original spawn point coordinates
-func respawn():
+func respawn() -> void:
 	global_position = spawn_point
 	velocity = Vector2.ZERO
 	knockback_timer = 0.0
@@ -369,13 +391,13 @@ func respawn():
 		qte_indicator.visible = false
 
 # Dash upgrade callback: reduces dash cooldown duration by half
-func upgrade_dash_cooldown():
+func upgrade_dash_cooldown() -> void:
 	dash_component.upgrade_cooldown()
 
 # Key collection callback
-func collect_key(key_name: String):
+func collect_key(key_name: String) -> void:
 	keys.append(key_name)
-	emit_signal("key_collected", key_name)
+	key_collected.emit(key_name)
 	print("Key collected: ", key_name, " | Total keys: ", keys)
 
 # Trigger hit stop (time freeze) on successful impact
@@ -396,5 +418,6 @@ func shake_camera(direction_x: float, intensity: float = 8.0, duration: float = 
 func apply_melee_recoil(direction_x: float, force: float = 160.0) -> void:
 	# Recoil pushback in opposite direction of slash
 	velocity.x = -direction_x * force
-	recoil_timer = 0.08
+	recoil_timer = melee_recoil_duration
 	move_and_slide()
+

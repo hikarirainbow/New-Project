@@ -264,20 +264,20 @@ func apply_save_to_player(player: Node) -> void:
 		var sanity_val = data.get("sanity", 100.0)
 		player.corruption_component.sanity = sanity_val
 		player.corruption_component.corruption = 100.0 - sanity_val
-		player.corruption_component.emit_signal("sanity_changed", sanity_val)
+		player.corruption_component.sanity_changed.emit(sanity_val)
 
 	# Health & debuff
 	player.is_debuffed = data.get("is_debuffed", false)
 	player.max_health = data.get("max_health", 100)
 	player.current_health = data.get("current_health", 100)
-	player.emit_signal("health_changed", player.current_health)
+	player.health_changed.emit(player.current_health)
 
 	# Keys
 	if "keys" in player:
 		player.keys.clear()
 		for k in data.get("keys", []):
 			player.keys.append(str(k))
-		player.emit_signal("key_collected", "")
+		player.key_collected.emit("")
 
 	# Dash cooldown
 	if player.dash_component:

@@ -1,19 +1,32 @@
 extends Actor
 
-const SPEED         = 60.0
-const CHASE_SPEED   = 90.0
-const CONTACT_DAMAGE = 15
-const CHASE_RADIUS  = 100.0
+@export_group("Enemy Settings")
+@export var patrol_speed: float = 60.0
+@export var chase_speed: float = 90.0
+@export var contact_damage: int = 15
+@export var chase_radius: float = 100.0
+@export var sp_gain: int = 1
+
+@export_group("AI Parameters")
+@export var wall_raycast_length: float = 24.0
+@export var wall_jump_force: float = 250.0
+@export var jump_height_threshold: float = -10.0
+@export var contact_hitbox_size: Vector2 = Vector2(50.0, 70.0)
+
+@export_group("Drops")
+@export var key_name_to_drop: String = "Boss Key"
+@export var key_pickup_radius: float = 20.0
 
 enum State { PATROL, CHASE, DEAD }
-var current_state = State.PATROL
+var current_state: State = State.PATROL
 
-var direction = 1
-var player_ref: Node = null
+var direction: int = 1
+var player_ref: Player = null
+var contact_area: Area2D = null
 
-@onready var edge_right  = $RayCast2D_EdgeRight
-@onready var edge_left   = $RayCast2D_EdgeLeft
-@onready var wall_ray    = $RayCast2D_Wall
+@onready var edge_right: RayCast2D = $RayCast2D_EdgeRight
+@onready var edge_left: RayCast2D = $RayCast2D_EdgeLeft
+@onready var wall_ray: RayCast2D = $RayCast2D_Wall
 
 # Cấu hình ngưỡng ánh sáng hiển thị trực tiếp qua Inspector (0.0 = nhạy nhất, 1.0 = tắt)
 @export_group("Shadow Shroud")
@@ -23,7 +36,7 @@ var player_ref: Node = null
 		if is_inside_tree():
 			_update_shadow_shroud_material()
 
-func _ready():
+func _ready() -> void:
 	add_to_group("enemies")
 	
 	if current_state == State.DEAD:
@@ -33,18 +46,33 @@ func _ready():
 			$Sprite2D.modulate = Color(0.5, 0.5, 0.5, 1.0)
 		return
 		
+	_setup_contact_area()
+	
 	# Cache player reference once
 	await get_tree().process_frame
-	player_ref = get_tree().get_first_node_in_group("player")
+	player_ref = get_tree().get_first_node_in_group("player") as Player
 
 func set_as_corpse() -> void:
 	current_state = State.DEAD
 
-func _update_shadow_shroud_material():
+func _update_shadow_shroud_material() -> void:
 	if has_node("Sprite2D") and $Sprite2D.material is ShaderMaterial:
 		$Sprite2D.material.set_shader_parameter("light_threshold", shadow_shroud_light_threshold)
 
-func _physics_process(delta):
+func _setup_contact_area() -> void:
+	contact_area = Area2D.new()
+	contact_area.name = "ContactDamageArea"
+	contact_area.collision_layer = 0
+	contact_area.collision_mask = 2 # Detect Player (Layer 2)
+	
+	var col_shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = contact_hitbox_size
+	col_shape.shape = rect
+	contact_area.add_child(col_shape)
+	add_child(contact_area)
+
+func _physics_process(delta: float) -> void:
 	# Knockback processing (shared from Actor)
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
@@ -60,17 +88,17 @@ func _physics_process(delta):
 		State.DEAD:   _dead(delta)
 
 # ── PATROL ──────────────────────────────────────────────────────────────────
-func _patrol(delta):
+func _patrol(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += gravity * delta
 
 	# Transition → CHASE if player is within radius
-	if player_ref and global_position.distance_to(player_ref.global_position) <= CHASE_RADIUS:
+	if player_ref and global_position.distance_to(player_ref.global_position) <= chase_radius:
 		current_state = State.CHASE
 		return
 
-	var should_flip = false
-	wall_ray.target_position.x = direction * 24.0
+	var should_flip := false
+	wall_ray.target_position.x = direction * wall_raycast_length
 	wall_ray.force_raycast_update()
 	if wall_ray.is_colliding():
 		should_flip = true
@@ -86,20 +114,20 @@ func _patrol(delta):
 		if has_node("Sprite2D"):
 			$Sprite2D.flip_h = direction < 0
 
-	velocity.x = direction * SPEED
+	velocity.x = direction * patrol_speed
 	move_and_slide()
 	_apply_contact_damage()
 
 # ── CHASE ───────────────────────────────────────────────────────────────────
-func _chase(delta):
+func _chase(delta: float) -> void:
 	if not player_ref:
 		current_state = State.PATROL
 		return
 
-	var dist = global_position.distance_to(player_ref.global_position)
+	var dist := global_position.distance_to(player_ref.global_position)
 
 	# Return to patrol when player escapes radius
-	if dist > CHASE_RADIUS:
+	if dist > chase_radius:
 		current_state = State.PATROL
 		return
 
@@ -107,49 +135,53 @@ func _chase(delta):
 		velocity.y += gravity * delta
 
 	# Move towards player horizontally
-	var dx = player_ref.global_position.x - global_position.x
+	var dx := player_ref.global_position.x - global_position.x
 	direction = 1 if dx > 0 else -1
 	if has_node("Sprite2D"):
 		$Sprite2D.flip_h = direction < 0
 
 	# Simple wall-jump: if blocked by wall and player is above, jump
-	wall_ray.target_position.x = direction * 24.0
+	wall_ray.target_position.x = direction * wall_raycast_length
 	wall_ray.force_raycast_update()
 	if wall_ray.is_colliding() and is_on_floor():
-		var dy = player_ref.global_position.y - global_position.y
-		if dy < -10.0:
-			velocity.y = -250.0
+		var dy := player_ref.global_position.y - global_position.y
+		if dy < jump_height_threshold:
+			velocity.y = -wall_jump_force
 
-	velocity.x = direction * CHASE_SPEED
+	velocity.x = direction * chase_speed
 	move_and_slide()
 	_apply_contact_damage()
 
 # ── DEAD (Corpse) ────────────────────────────────────────────────────────────
-func _dead(delta):
+func _dead(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += gravity * delta
 	velocity.x = 0
 	move_and_slide()
 
 # ── HELPERS ─────────────────────────────────────────────────────────────────
-# Áp dụng sát thương tiếp xúc bằng cách kiểm tra khoảng cách bao quanh (bounding box) giữa quái và Player,
-# do hai thực thể đã được thiết lập đi xuyên qua nhau và không sinh ra lực va chạm vật lý.
-func _apply_contact_damage():
-	if player_ref and player_ref.has_method("take_damage") and player_ref.current_state != player_ref.State.DEFEATED:
-		var diff_x = abs(global_position.x - player_ref.global_position.x)
-		var diff_y = abs(global_position.y - player_ref.global_position.y)
-		# Kích thước gạch 32x32, player rộng 32 (nửa rộng 16), enemy rộng 32 (nửa rộng 16).
-		# Ngưỡng tiếp xúc ngang < 30.0 và dọc < 44.0 tức là hai thực thể đang chạm/chồng lấn nhau.
-		if diff_x < 30.0 and diff_y < 44.0:
-			player_ref.take_damage(CONTACT_DAMAGE, global_position)
+func _apply_contact_damage() -> void:
+	if not contact_area:
+		return
+		
+	# Physics-offloaded overlap check:
+	for body in contact_area.get_overlapping_bodies():
+		if body.is_in_group("player") and body.has_method("take_damage"):
+			if body.current_state != body.State.DEFEATED:
+				body.take_damage(contact_damage, global_position)
 
 # ── DEATH (override Actor.die) ───────────────────────────────────────────────
-func die():
+func die() -> void:
 	current_state = State.DEAD
 
 	# Remove enemy collision; keep floor collision so corpse doesn't fall through
 	set_deferred("collision_layer", 0)
 	set_deferred("collision_mask", 1)
+	
+	# Disable the damage hitbox
+	if contact_area:
+		contact_area.queue_free()
+		contact_area = null
 
 	# Turn gray (corpse visual)
 	if has_node("Sprite2D"):
@@ -157,34 +189,35 @@ func die():
 
 	print("GrabEnemy died → CORPSE state")
 	
-	# Award player 1 Skill Point (SP)
-	if player_ref and player_ref.has_node("SkillComponent"):
-		player_ref.skill_component.skill_points += 1
-		print("[COMBAT] Enemy defeated! Player gains 1 Skill Point (SP: ", player_ref.skill_component.skill_points, ")")
+	# Award player Skill Point (SP)
+	if player_ref and player_ref.skill_component:
+		player_ref.skill_component.skill_points += sp_gain
+		print("[COMBAT] Enemy defeated! Player gains ", sp_gain, " Skill Point (SP: ", player_ref.skill_component.skill_points, ")")
 
-	# Dynamically create a pickup Area2D for the key (deferred to avoid physics query flushing error)
+	# Dynamically create a pickup Area2D for the key
 	call_deferred("_create_pickup_key_area")
 
-func _create_pickup_key_area():
-	var area = Area2D.new()
+func _create_pickup_key_area() -> void:
+	var area := Area2D.new()
 	area.name = "CorpseArea"
 
-	var shape_node = CollisionShape2D.new()
-	var circle = CircleShape2D.new()
-	circle.radius = 20.0
+	var shape_node := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = key_pickup_radius
 	shape_node.shape = circle
 	area.add_child(shape_node)
 
 	add_child(area)
 	area.body_entered.connect(_on_corpse_body_entered)
 
-func _on_corpse_body_entered(body):
+func _on_corpse_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("collect_key"):
-		body.collect_key("Boss Key")
+		body.collect_key(key_name_to_drop)
 		# Fade-out and free corpse
-		var tw = create_tween()
+		var tw := create_tween()
 		tw.tween_property(self, "modulate:a", 0.0, 0.35)
 		tw.finished.connect(queue_free)
 
 func is_alive() -> bool:
 	return current_state != State.DEAD
+
