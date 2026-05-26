@@ -5,6 +5,14 @@ var max_progress: float = 100.0
 var next_key: String = "any" # "left", "right", or "any"
 var shake_amount: float = 0.0
 
+func _ready() -> void:
+	var mat = CanvasItemMaterial.new()
+	mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	material = mat
+	
+	z_index = 100
+	z_as_relative = false
+
 func _process(delta: float) -> void:
 	if not visible:
 		return
