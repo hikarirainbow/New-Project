@@ -160,9 +160,9 @@ func handle_grabbed_state(delta):
 	
 	move_and_slide()
 	
-	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier (3x base rate = 45.0)
+	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier (halved rate = 22.5)
 	var decay_multiplier = corruption_component.get_qte_decay_multiplier() if corruption_component else 2.0
-	qte_progress = max(0.0, qte_progress - delta * 45.0 * decay_multiplier)
+	qte_progress = max(0.0, qte_progress - delta * 22.5 * decay_multiplier)
 	
 	# Check for close-range (5px) enemy H-scene trigger
 	if not _h_scene_active:
