@@ -173,6 +173,8 @@ func handle_grabbed_state(delta):
 				if dist <= 5.0:
 					_h_scene_active = true
 					emit_signal("h_scene_triggered", enemy)
+					if has_node("Sprite2D"):
+						$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red for H-scene trigger
 					print("H-Scene Triggered with enemy: ", enemy.name)
 					break
 
