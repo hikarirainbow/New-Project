@@ -58,10 +58,15 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 		# Reset camera smoothing and limits
 		var cam = player_instance.get_node_or_null("Camera2D")
 		if cam:
+			cam.position_smoothing_enabled = false
 			cam.limit_left = 0
 			cam.limit_top = 0
 			cam.limit_right = 1920 # 60 * 32
 			cam.limit_bottom = 640 # 20 * 32
+			cam.global_position = player_instance.global_position
+			cam.reset_physics_interpolation()
+			cam.force_update_scroll()
+			cam.position_smoothing_enabled = true
 			cam.reset_smoothing()
 		
 		# Explicitly update the new scene's HUD with the persistent player
