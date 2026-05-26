@@ -1,7 +1,10 @@
-[gd_scene format=3 uid="uid://c1c2o7i1jjmyx"]
+[gd_scene load_steps=8 format=3 uid="uid://c1c2o7i1jjmyx"]
 
 [ext_resource type="Script" path="res://scenes/player/player.gd" id="1_player_gd"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2_player_icon"]
+[ext_resource type="Script" path="res://scenes/player/components/attack_component.gd" id="3_attack_component_gd"]
+[ext_resource type="Script" path="res://scenes/player/components/dash_component.gd" id="4_dash_component_gd"]
+[ext_resource type="Script" path="res://scenes/player/components/light_component.gd" id="5_light_component_gd"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(28, 56)
@@ -36,3 +39,12 @@ monitorable = false
 position = Vector2(45, 0)
 shape = SubResource("RectangleShape2D_attack")
 disabled = true
+
+[node name="AttackComponent" type="Node2D" parent="."]
+script = ExtResource("3_attack_component_gd")
+
+[node name="DashComponent" type="Node" parent="."]
+script = ExtResource("4_dash_component_gd")
+
+[node name="LightComponent" type="Node2D" parent="."]
+script = ExtResource("5_light_component_gd")
