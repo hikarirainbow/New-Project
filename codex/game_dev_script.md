@@ -55,6 +55,17 @@ MUTE: Toggles AudioServer bus 0
 RESET: Restores defaults, overwrites JSON
 STYLE: Buttons flat, hover shows StyleBoxFlat border_width_bottom=2px
 
+## Room & Portal Transition System
+PORTAL_VISUAL: 32x64px solid white rectangle (drawn dynamically in _draw()).
+PORTAL_COLLISION: Area2D with CollisionShape2D matching 32x64px. Detects player on Layer 2.
+PORTAL_LOCATIONS: Located at the bottom-left and bottom-right corners of the room (rows 17-18, columns 0 and 59). Wall tiles are omitted at these rows to create openings.
+PERSISTENCE_TRICK (RoomManager Autoload):
+- Intercepts player node on transition using `node_added` signals and deferred removal/adding.
+- Removes player node from old scene before `change_scene_to_file` to prevent deletion.
+- Swaps/removes newly instantiated player in the new scene with the persistent player instance.
+- Re-establishes HUD signal connections cleanly without duplicate connection errors.
+- Resets physics interpolation (`reset_physics_interpolation`) and camera smoothing (`reset_smoothing` with zoom 1.2 and level bounds set) to prevent visual streaking/warping upon teleport.
+
 ## Changelog
 
 ### 2026-05-25
@@ -69,3 +80,4 @@ STYLE: Buttons flat, hover shows StyleBoxFlat border_width_bottom=2px
 ### 2026-05-26
 - Reduced ambient light (CanvasModulate) brightness in dark areas to 8/255 (nearly pitch-black overlay).
 - Enabled 2D physics interpolation and configured canvas_items stretch mode with Nearest texture filtering to eliminate movement jitter and enable smooth subpixel movement.
+- Created RoomManager autoload and RoomPortal to implement seamless room transitions without reloading/killing the player.
