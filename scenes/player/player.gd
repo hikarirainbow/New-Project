@@ -50,6 +50,7 @@ var spawn_point: Vector2
 func _ready():
 	add_to_group("player")
 	spawn_point = global_position
+	if has_node("Camera2D"): $Camera2D.zoom = Vector2(1.2, 1.2)
 	if has_node("AttackArea"):
 		$AttackArea.body_entered.connect(_on_attack_body_entered)
 		
