@@ -7,8 +7,14 @@ const JUMP_VELOCITY   = -450.0  # ~103px apex
 const ACCELERATION    = 1000.0
 
 # Trạng thái nhân vật (FSM)
-enum State { MOVE, GRABBED, DEFEATED, DASH }
+enum State { MOVE, GRABBED, DEFEATED, DASH, CLIMB }
 var current_state = State.MOVE
+
+# Các biến trạng thái leo tường/ledge climb
+var climb_start_pos: Vector2
+var climb_target_pos: Vector2
+var climb_timer: float = 0.0
+var climb_duration: float = 0.5
 
 # Trạng thái suy yếu (Debuff) đặc thù của Player
 var is_debuffed = false
@@ -76,6 +82,8 @@ func _physics_process(delta):
 			handle_defeated_state(delta)
 		State.DASH:
 			dash_component.process_dash(delta)
+		State.CLIMB:
+			handle_climb_state(delta)
 
 # Logic trạng thái di chuyển tự do
 func handle_move_state(delta):
@@ -115,9 +123,15 @@ func handle_move_state(delta):
 		move_and_slide()
 		return
 
-	# Nhảy (sử dụng lực tối đa — thả phím sớm để nhảy thấp hơn)
-	if Input.is_action_just_pressed("jump") and is_on_floor():
-		velocity.y = JUMP_VELOCITY
+	# Nhảy hoặc kích hoạt leo tường nếu ở trên không
+	if Input.is_action_just_pressed("jump"):
+		if is_on_floor():
+			velocity.y = JUMP_VELOCITY
+		else:
+			var ledge_data = _check_ledge()
+			if not ledge_data.is_empty():
+				start_climb(ledge_data.target_position)
+				return
 
 	# Lấy hướng nhập từ bàn phím A/D hoặc Trái/Phải
 	var direction = Input.get_axis("move_left", "move_right")
@@ -221,6 +235,108 @@ func apply_knockback(source_position: Vector2, force: float = 250.0):
 	velocity.y = actual_upward
 	knockback_timer = actual_duration
 
+# Logic khi vật leo tường (Climb State)
+func handle_climb_state(delta):
+	climb_timer += delta
+	var t = climb_timer / climb_duration
+	t = clamp(t, 0.0, 1.0)
+	
+	# Leo hình chữ L (L-shaped LERP): Lên trước, tiến sau
+	if t < 0.5:
+		var ratio = t / 0.5
+		var ease_ratio = sin(ratio * PI * 0.5)
+		global_position.y = lerp(climb_start_pos.y, climb_target_pos.y, ease_ratio)
+		global_position.x = climb_start_pos.x
+		# Co giãn sprite tạo cảm giác nhún người leo lên
+		if has_node("Sprite2D"):
+			$Sprite2D.scale = Vector2(0.22, 0.58)
+	else:
+		var ratio = (t - 0.5) / 0.5
+		var ease_ratio = sin(ratio * PI * 0.5)
+		global_position.y = climb_target_pos.y
+		global_position.x = lerp(climb_start_pos.x, climb_target_pos.x, ease_ratio)
+		if has_node("Sprite2D"):
+			$Sprite2D.scale = Vector2(0.28, 0.42)
+			
+	if climb_timer >= climb_duration:
+		# Kết thúc hoạt cảnh leo tường
+		global_position = climb_target_pos
+		if has_node("Sprite2D"):
+			$Sprite2D.scale = Vector2(0.25, 0.5) # Khôi phục scale gốc
+		set_collision_mask_value(1, true) # Bật lại va chạm gạch
+		current_state = State.MOVE
+
+# Bắt đầu hoạt cảnh leo
+func start_climb(target_pos: Vector2):
+	current_state = State.CLIMB
+	climb_start_pos = global_position
+	climb_target_pos = target_pos
+	climb_timer = 0.0
+	velocity = Vector2.ZERO
+	
+	# Ngắt đòn đánh và lướt
+	attack_component.interrupt()
+	dash_component.interrupt()
+	
+	# Tắt va chạm với gạch tạm thời để tránh glitch kẹt tường
+	set_collision_mask_value(1, false)
+
+# Lấy thông tin mép tường tự động sửa sai vị trí (Auto-Correction Ledge Check)
+func _check_ledge() -> Dictionary:
+	if is_on_floor():
+		return {}
+		
+	var space_state = get_world_2d().direct_space_state
+	var facing_dir = -1.0 if (has_node("Sprite2D") and $Sprite2D.flip_h) else 1.0
+	
+	# 1. Bắn tia ngang ở đầu gối/hông (Y = 16) - phải va chạm vật thể
+	var lower_start = global_position + Vector2(0, 16)
+	var lower_end = lower_start + Vector2(facing_dir * 20, 0)
+	var query_lower = PhysicsRayQueryParameters2D.create(lower_start, lower_end, 1)
+	query_lower.exclude = [get_rid()]
+	var result_lower = space_state.intersect_ray(query_lower)
+	
+	if result_lower.is_empty():
+		return {}
+		
+	# 2. Bắn tia ngang ở ngực/đầu (Y = -16) - phải trống (đầu vượt qua mép)
+	var upper_start = global_position + Vector2(0, -16)
+	var upper_end = upper_start + Vector2(facing_dir * 20, 0)
+	var query_upper = PhysicsRayQueryParameters2D.create(upper_start, upper_end, 1)
+	query_upper.exclude = [get_rid()]
+	var result_upper = space_state.intersect_ray(query_upper)
+	
+	if not result_upper.is_empty():
+		return {}
+		
+	# 3. Tính toán mép trên của gạch bằng cách bắn tia dọc từ trên xuống
+	var wall_x = result_lower.position.x
+	var check_top_start = Vector2(wall_x + facing_dir * 4, result_lower.position.y - 24)
+	var check_top_end = Vector2(wall_x + facing_dir * 4, result_lower.position.y + 24)
+	var query_top = PhysicsRayQueryParameters2D.create(check_top_start, check_top_end, 1)
+	query_top.exclude = [get_rid()]
+	var result_top = space_state.intersect_ray(query_top)
+	
+	if result_top.is_empty():
+		return {}
+		
+	var ledge_top_y = result_top.position.y
+	
+	# Vị trí đích an sau khi leo cách mép tile một khoảng nhỏ
+	var target_pos = Vector2(wall_x + facing_dir * 15.0, ledge_top_y - 32.0)
+	
+	# 4. Kiểm tra xem vị trí đứng sau khi leo có bị cản trở/kẹt trần hay không
+	var query_clear = PhysicsRayQueryParameters2D.create(target_pos, target_pos + Vector2(0, -30), 1)
+	query_clear.exclude = [get_rid()]
+	var result_clear = space_state.intersect_ray(query_clear)
+	if not result_clear.is_empty():
+		return {}
+		
+	return {
+		"target_position": target_pos,
+		"start_position": global_position
+	}
+
 # Logic khi bị đánh bại hoàn toàn (Defeated)
 func handle_defeated_state(delta):
 	# Nếu đang lơ lửng trên không thì rơi xuống đất
@@ -237,6 +353,12 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 	# Ngắt đòn đánh hoặc lướt khi trúng đòn
 	attack_component.interrupt()
 	dash_component.interrupt()
+	
+	# Nếu bị đánh trúng khi đang leo tường, dừng leo và khôi phục va chạm
+	if current_state == State.CLIMB:
+		set_collision_mask_value(1, true)
+		if has_node("Sprite2D"):
+			$Sprite2D.scale = Vector2(0.25, 0.5)
 	
 	var is_below_half_hp = current_health < max_health * 0.5
 	var would_survive = (current_health - amount) > 0
