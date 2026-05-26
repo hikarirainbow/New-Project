@@ -160,9 +160,9 @@ func handle_grabbed_state(delta):
 	
 	move_and_slide()
 	
-	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier (5x base rate = 75.0)
+	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier (3x base rate = 45.0)
 	var decay_multiplier = corruption_component.get_qte_decay_multiplier() if corruption_component else 2.0
-	qte_progress = max(0.0, qte_progress - delta * 75.0 * decay_multiplier)
+	qte_progress = max(0.0, qte_progress - delta * 45.0 * decay_multiplier)
 	
 	# Check for close-range (5px) enemy H-scene trigger
 	if not _h_scene_active:
@@ -270,6 +270,8 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 	var final_amount = amount
 	if corruption_component:
 		final_amount = int(round(amount * corruption_component.get_defense_multiplier()))
+		# Subtract sanity when attacked (doubled penalty = 2x final damage)
+		corruption_component.subtract_sanity(final_amount * 2.0)
 
 	# Interrupt active actions on hit
 	attack_component.interrupt()

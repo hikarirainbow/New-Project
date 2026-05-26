@@ -21,31 +21,22 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	# 1. State transition monitoring (instantaneous single-frame checks)
 	if player.current_state == Player.State.GRABBED and _last_state != Player.State.GRABBED:
-		# Transition to Subjugated state: instantly lose -30.0 sanity
-		subtract_sanity(30.0)
+		# Transition to Subjugated state: instantly lose -60.0 sanity (doubled from 30.0)
+		subtract_sanity(60.0)
 
 	elif player.current_state == Player.State.MOVE and _last_state == Player.State.GRABBED:
 		# Successful QTE struggle escape: recover +10.0 sanity
 		add_sanity(10.0)
 
 	elif player.current_state == Player.State.DEFEATED and _last_state == Player.State.GRABBED:
-		# Failed struggle / defeated by quai: lose -30.0 sanity
-		subtract_sanity(30.0)
+		# Failed struggle / defeated by quai: lose -60.0 sanity (doubled from 30.0)
+		subtract_sanity(60.0)
 
 	# Update cached state
 	_last_state = player.current_state
 
 	# 2. Continuous time-based polling (framerate independent decay/recovery)
-	if player.attack_component and player.attack_component.is_attacking():
-		# Melee attack costs: 2.0 / 3.0 / 5.0 total over 0.15s duration
-		var cost_per_sec = 13.33
-		match player.attack_component.current_combo_index:
-			0: cost_per_sec = 13.33   # 2.0 / 0.15
-			1: cost_per_sec = 20.0    # 3.0 / 0.15
-			2: cost_per_sec = 33.33   # 5.0 / 0.15
-		subtract_sanity(delta * cost_per_sec)
-
-	elif player.current_state == Player.State.MOVE:
+	if player.current_state == Player.State.MOVE:
 		# Passive recovery when idle/walking: +1.0 sanity / sec
 		add_sanity(delta * 1.0)
 
