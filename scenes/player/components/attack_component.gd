@@ -55,7 +55,12 @@ func can_attack() -> bool:
 
 func start_attack() -> void:
 	current_combo_index = combo_index
-	attack_timer = ATTACK_DURATION
+	
+	var duration = ATTACK_DURATION
+	if player and player.skill_component and player.skill_component.is_skill_unlocked("B"):
+		duration = 0.10 # Faster attack duration (0.10s instead of 0.15s)
+		
+	attack_timer = duration
 	combo_reset_timer = 0.0
 	bodies_hit_this_attack.clear()
 	
@@ -66,26 +71,30 @@ func start_attack() -> void:
 		
 		match current_combo_index:
 			0:
-				attack_area_collision.shape.size = Vector2(40.0, 50.0)
-				attack_area_collision.position.x = -36.0 if is_facing_left else 36.0
-				attack_area_collision.position.y = 0.0
+				attack_area_collision.shape.size = Vector2(40.0, 68.0)
+				attack_area_collision.position.x = -38.0 if is_facing_left else 38.0
+				attack_area_collision.position.y = 9.0
 				if attack_shape_2:
 					attack_shape_2.disabled = true
 			1:
-				attack_area_collision.shape.size = Vector2(40.0, 50.0)
-				attack_area_collision.position.x = -36.0 if is_facing_left else 36.0
-				attack_area_collision.position.y = 0.0
+				attack_area_collision.shape.size = Vector2(40.0, 68.0)
+				attack_area_collision.position.x = -38.0 if is_facing_left else 38.0
+				attack_area_collision.position.y = 9.0
 				if attack_shape_2 and attack_shape_2.shape:
 					attack_shape_2.disabled = false
 					attack_shape_2.shape.size = Vector2(70.0, 40.0)
 					attack_shape_2.position.x = 0.0
 					attack_shape_2.position.y = -52.0
+					attack_shape_2.shape = attack_shape_2.shape # Force shape update
 			2:
-				attack_area_collision.shape.size = Vector2(50.0, 30.0)
-				attack_area_collision.position.x = -41.0 if is_facing_left else 41.0
-				attack_area_collision.position.y = 0.0
+				attack_area_collision.shape.size = Vector2(50.0, 48.0)
+				attack_area_collision.position.x = -43.0 if is_facing_left else 43.0
+				attack_area_collision.position.y = 9.0
 				if attack_shape_2:
 					attack_shape_2.disabled = true
+		
+		# Force physics cache refresh on shape updates
+		attack_area_collision.shape = attack_area_collision.shape
 	queue_redraw()
 
 func end_attack() -> void:
@@ -95,7 +104,12 @@ func end_attack() -> void:
 		attack_shape_2.disabled = true
 		
 	combo_index = (current_combo_index + 1) % 3
-	combo_reset_timer = COMBO_RESET_DELAY
+	
+	var reset_delay = COMBO_RESET_DELAY
+	if player and player.skill_component and player.skill_component.is_skill_unlocked("B"):
+		reset_delay = 0.35 # Quicker combo chain window reset
+		
+	combo_reset_timer = reset_delay
 	queue_redraw()
 
 func interrupt() -> void:
@@ -117,6 +131,17 @@ func _on_attack_body_entered(body: Node2D) -> void:
 		if player and player.has_node("CorruptionComponent"):
 			var corruption_node = player.get_node("CorruptionComponent")
 			base_damage = int(round(base_damage * corruption_node.get_attack_multiplier()))
+			
+		# Apply Skill A: +50% Base Damage multiplier
+		if player and player.skill_component and player.skill_component.is_skill_unlocked("A"):
+			base_damage = int(round(base_damage * 1.5))
+			
+		# Apply Skill C: Critical Strike (20% chance to deal 2x damage)
+		if player and player.skill_component and player.skill_component.is_skill_unlocked("C"):
+			if randf() <= 0.20:
+				base_damage *= 2
+				print("[COMBAT] CRITICAL! Damage doubled to: ", base_damage)
+				
 		body.take_damage(base_damage, player.global_position)
 		
 		# Melee impact effects: hit stop, slash-opposite camera shake, and recoil
@@ -144,12 +169,12 @@ func _draw() -> void:
 		var is_facing_left = player.get_node("Sprite2D").flip_h if player.has_node("Sprite2D") else false
 		match current_combo_index:
 			0:
-				var x_pos = -56.0 if is_facing_left else 16.0
-				draw_rect(Rect2(x_pos, -25.0, 40.0, 50.0), Color(0.15, 0.15, 0.85, 0.6))
+				var x_pos = -58.0 if is_facing_left else 18.0
+				draw_rect(Rect2(x_pos, -25.0, 40.0, 68.0), Color(0.15, 0.15, 0.85, 0.6))
 			1:
-				var x_pos = -56.0 if is_facing_left else 16.0
-				draw_rect(Rect2(x_pos, -25.0, 40.0, 50.0), Color(0.15, 0.85, 0.15, 0.6))
-				draw_rect(Rect2(-35.0, -52.0, 70.0, 40.0), Color(0.15, 0.85, 0.15, 0.6))
+				var x_pos = -58.0 if is_facing_left else 18.0
+				draw_rect(Rect2(x_pos, -25.0, 40.0, 68.0), Color(0.15, 0.85, 0.15, 0.6))
+				draw_rect(Rect2(-35.0, -72.0, 70.0, 40.0), Color(0.15, 0.85, 0.15, 0.6))
 			2:
-				var x_pos = -66.0 if is_facing_left else 16.0
-				draw_rect(Rect2(x_pos, -15.0, 50.0, 30.0), Color(0.85, 0.15, 0.15, 0.6))
+				var x_pos = -68.0 if is_facing_left else 18.0
+				draw_rect(Rect2(x_pos, -15.0, 50.0, 48.0), Color(0.85, 0.15, 0.15, 0.6))

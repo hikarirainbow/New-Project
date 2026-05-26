@@ -35,12 +35,17 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 
 # Standard knockback logic
 func apply_knockback(source_position: Vector2, force: float = 250.0):
-	# Calculate reverse horizontal impulse direction away from source
-	var direction = (global_position - source_position).normalized()
-	if abs(direction.x) < 0.1:
-		direction.x = 1.0 if randf() > 0.5 else -1.0
-	velocity.x = direction.x * force
-	velocity.y = -180.0 # Standard vertical jump height bounce
+	# Horizontal direction away from source
+	var push_dir = 1.0 if global_position.x > source_position.x else -1.0
+	velocity.x = push_dir * force
+	
+	# Only keep Y bounce if slashed from above (source is above this actor)
+	var is_slashed_from_above = source_position.y < global_position.y - 12.0
+	if is_slashed_from_above:
+		velocity.y = -180.0
+	else:
+		velocity.y = 0.0
+		
 	knockback_timer = 0.25 # Input block duration (seconds)
 
 # Death callback (must be overridden by subclasses)

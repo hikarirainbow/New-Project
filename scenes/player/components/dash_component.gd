@@ -9,19 +9,30 @@ var dash_cooldown = 0.8
 var dash_timer = 0.0
 var dash_cooldown_timer = 0.0
 var dash_direction = Vector2.ZERO
+var extra_dash_used: bool = false
 
 @onready var player = get_parent()
 
 func _physics_process(delta: float) -> void:
 	if dash_cooldown_timer > 0.0:
 		dash_cooldown_timer -= delta
+	if player.is_on_floor():
+		extra_dash_used = false
 
 func can_dash() -> bool:
-	return dash_cooldown_timer <= 0.0
+	if dash_cooldown_timer <= 0.0:
+		return true
+	if player.skill_component and player.skill_component.is_skill_unlocked("E") and not extra_dash_used:
+		return true
+	return false
 
 func start_dash() -> void:
 	player.current_state = Player.State.DASH
 	dash_timer = 0.0
+	
+	if dash_cooldown_timer > 0.0:
+		extra_dash_used = true
+		
 	dash_cooldown_timer = dash_cooldown
 	
 	var dir = Input.get_axis("move_left", "move_right")
@@ -33,15 +44,23 @@ func start_dash() -> void:
 	if player.has_node("Sprite2D"):
 		player.get_node("Sprite2D").flip_h = dash_direction.x < 0
 		
-	player.velocity.x = dash_direction.x * DASH_SPEED
+	var speed = DASH_SPEED
+	if player.skill_component and player.skill_component.is_skill_unlocked("D"):
+		speed = DASH_SPEED * 1.4
+		
+	player.velocity.x = dash_direction.x * speed
 	player.velocity.y = 0.0
 	player.is_invincible = true
 
 func process_dash(delta: float) -> void:
 	dash_timer += delta
 	
+	var speed = DASH_SPEED
+	if player.skill_component and player.skill_component.is_skill_unlocked("D"):
+		speed = DASH_SPEED * 1.4
+		
 	if dash_timer < DASH_ACTIVE_DURATION:
-		player.velocity.x = dash_direction.x * DASH_SPEED
+		player.velocity.x = dash_direction.x * speed
 		player.velocity.y = 0.0
 		player.is_invincible = true
 	elif dash_timer < DASH_DURATION:
@@ -57,7 +76,7 @@ func process_dash(delta: float) -> void:
 		var total_recovery_time = DASH_DURATION - DASH_ACTIVE_DURATION
 		var t = recovery_time_passed / total_recovery_time
 		
-		player.velocity.x = lerp(dash_direction.x * DASH_SPEED, target_speed, t)
+		player.velocity.x = lerp(dash_direction.x * speed, target_speed, t)
 		
 		if not player.is_on_floor():
 			player.velocity.y += player.gravity * delta
@@ -74,6 +93,7 @@ func interrupt() -> void:
 
 func reset() -> void:
 	dash_cooldown_timer = 0.0
+	extra_dash_used = false
 
 func upgrade_cooldown() -> void:
 	dash_cooldown = dash_cooldown / 2.0

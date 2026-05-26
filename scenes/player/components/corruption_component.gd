@@ -37,14 +37,20 @@ func _physics_process(delta: float) -> void:
 
 	# 2. Continuous time-based polling (framerate independent decay/recovery)
 	if player.current_state == Player.State.MOVE:
-		# Passive recovery when idle/walking: +5.0 sanity / sec (5x recovery rate)
-		add_sanity(delta * 5.0)
+		# Passive recovery when idle/walking: +5.0 sanity / sec (5x recovery rate), doubled to 10.0 if J is unlocked
+		var regen_rate = 5.0
+		if player.skill_component and player.skill_component.is_skill_unlocked("J"):
+			regen_rate = 10.0
+		add_sanity(delta * regen_rate)
 
 # Helper to safely decrease sanity
 func subtract_sanity(amount: float) -> void:
 	if amount <= 0.0 or player.current_state == Player.State.DEFEATED:
 		return
-	sanity = max(0.0, sanity - amount)
+	var actual_amount = amount
+	if player.skill_component and player.skill_component.is_skill_unlocked("L"):
+		actual_amount = amount * 0.7 # 30% reduction in sanity damage taken
+	sanity = max(0.0, sanity - actual_amount)
 	corruption = 100.0 - sanity
 	emit_signal("sanity_changed", sanity)
 
@@ -61,13 +67,19 @@ func purify(amount: float) -> void:
 	add_sanity(amount)
 
 # Public combat multipliers:
-# Sát thương gây ra (Attack multiplier): tăng tuyến tính lên tới 2.0x khi corruption chạm 100%
+# Sát thương gây ra (Attack multiplier): tăng tuyến tính lên tới 2.0x khi corruption chạm 100%, 2.5x nếu G mở
 func get_attack_multiplier() -> float:
-	return 1.0 + (corruption / 100.0) * 1.0
+	var bonus = 1.0
+	if player.skill_component and player.skill_component.is_skill_unlocked("G"):
+		bonus = 1.5
+	return 1.0 + (corruption / 100.0) * bonus
 
-# Sát thương nhận vào (Defense multiplier): tăng tuyến tính lên tới 1.5x khi corruption chạm 100%
+# Sát thương nhận vào (Defense multiplier): tăng tuyến tính lên tới 1.5x khi corruption chạm 100%, 1.25x nếu L mở
 func get_defense_multiplier() -> float:
-	return 1.0 + (corruption / 100.0) * 0.5
+	var penalty = 0.5
+	if player.skill_component and player.skill_component.is_skill_unlocked("L"):
+		penalty = 0.25
+	return 1.0 + (corruption / 100.0) * penalty
 
 # Hệ số trừ thanh QTE trong trạng thái Subjugated
 # 0% corruption -> 2x decay (default)

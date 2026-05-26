@@ -4,8 +4,18 @@ extends Node2D
 @export var texture_scale: float = 2.5
 @export var shadow_color: Color = Color(0, 0, 0, 0.7)
 
+@onready var player = get_parent()
+
 func _ready() -> void:
 	_setup_light()
+
+func _physics_process(_delta: float) -> void:
+	var light = get_node_or_null("PlayerLight")
+	if light:
+		var target_scale = texture_scale
+		if player and player.has_node("SkillComponent") and player.skill_component.is_skill_unlocked("K"):
+			target_scale = texture_scale * 1.5
+		light.texture_scale = lerp(light.texture_scale, target_scale, 0.1)
 
 func _setup_light() -> void:
 	var light = PointLight2D.new()

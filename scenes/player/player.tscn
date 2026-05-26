@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scenes/player/components/climb_component.gd" id="6_climb_component_gd"]
 [ext_resource type="Script" path="res://scenes/player/components/animation_component.gd" id="7_animation_component_gd"]
 [ext_resource type="Script" path="res://scenes/player/components/corruption_component.gd" id="8_corruption_component_gd"]
+[ext_resource type="Script" path="res://scenes/player/components/skill_component.gd" id="9_skill_component_gd"]
 
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
@@ -130,5 +131,8 @@ script = ExtResource("7_animation_component_gd")
 
 [node name="CorruptionComponent" type="Node2D" parent="."]
 script = ExtResource("8_corruption_component_gd")
+
+[node name="SkillComponent" type="Node2D" parent="."]
+script = ExtResource("9_skill_component_gd")
 
 

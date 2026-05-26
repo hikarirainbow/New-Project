@@ -84,6 +84,18 @@ func _build_map() -> void:
 	for row in [16, 13, 10, 7]:
 		_build_platform_row(row)
 
+	# Spawn checkpoints on the floor (row 18)
+	_spawn_checkpoint(15, 18)
+	_spawn_checkpoint(40, 18)
+
+func _spawn_checkpoint(col: int, row: int) -> void:
+	var cp_script = load("res://scenes/levels/checkpoint.gd")
+	var cp = Area2D.new()
+	cp.set_script(cp_script)
+	cp.name = "Checkpoint_" + str(col)
+	cp.position = Vector2(col * TILE + TILE * 0.5, row * TILE + TILE * 0.5)
+	add_child(cp)
+
 func _build_platform_row(row: int) -> void:
 	var target_platforms := rng.randi_range(4, 6)
 	var used             := {}    # col → true

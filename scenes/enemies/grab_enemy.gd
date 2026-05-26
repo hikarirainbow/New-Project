@@ -146,6 +146,11 @@ func die():
 		$Sprite2D.modulate = Color(0.5, 0.5, 0.5, 1.0)
 
 	print("GrabEnemy died → CORPSE state")
+	
+	# Award player 1 Skill Point (SP)
+	if player_ref and player_ref.has_node("SkillComponent"):
+		player_ref.skill_component.skill_points += 1
+		print("[COMBAT] Enemy defeated! Player gains 1 Skill Point (SP: ", player_ref.skill_component.skill_points, ")")
 
 	# Dynamically create a pickup Area2D for the key (deferred to avoid physics query flushing error)
 	call_deferred("_create_pickup_key_area")

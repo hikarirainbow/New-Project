@@ -18,6 +18,8 @@ var is_debuffed = false
 var invincibility_timer = 0.0
 var is_invincible = false
 var recoil_timer: float = 0.0
+var is_at_checkpoint: bool = false
+var has_double_jumped: bool = false
 
 # Quick Time Event (QTE) tracking variables
 var qte_progress: float = 0.0
@@ -43,6 +45,7 @@ var spawn_point: Vector2
 @onready var climb_component = $ClimbComponent
 @onready var animation_component = $AnimationComponent
 @onready var corruption_component = $CorruptionComponent
+@onready var skill_component = $SkillComponent
 
 
 
@@ -117,6 +120,16 @@ func handle_move_state(delta):
 		# Fall gravity is scaled by 1.5x to create a heavier platforming feel
 		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
 		velocity.y += active_gravity * delta
+		
+		# Auto-climb: trigger when holding directional input towards the wall we are facing
+		var dir = Input.get_axis("move_left", "move_right")
+		var is_facing_left = $Sprite2D.flip_h if has_node("Sprite2D") else false
+		var input_towards_wall = (dir < 0 and is_facing_left) or (dir > 0 and not is_facing_left)
+		if input_towards_wall:
+			var ledge_data = climb_component.check_ledge()
+			if not ledge_data.is_empty():
+				climb_component.start_climb(ledge_data.target_position)
+				return
 
 	# Variable jump height: release jump button early to scale upwards velocity by 0.1x (min jump ~5px)
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
@@ -128,15 +141,17 @@ func handle_move_state(delta):
 		move_and_slide()
 		return
 
-	# Jump or trigger ledge climb sequence if airborne
+	if is_on_floor():
+		has_double_jumped = false
+
+	# Jump or double jump checks if airborne
 	if Input.is_action_just_pressed("jump"):
 		if is_on_floor():
 			velocity.y = JUMP_VELOCITY
 		else:
-			var ledge_data = climb_component.check_ledge()
-			if not ledge_data.is_empty():
-				climb_component.start_climb(ledge_data.target_position)
-				return
+			if skill_component and skill_component.is_skill_unlocked("F") and not has_double_jumped:
+				velocity.y = JUMP_VELOCITY
+				has_double_jumped = true
 
 	# Query directional horizontal inputs
 	var direction = Input.get_axis("move_left", "move_right")
@@ -207,7 +222,10 @@ func handle_grabbed_state(delta):
 			valid_input = true
 			
 		if valid_input:
-			qte_progress = min(qte_target, qte_progress + 10.0)
+			var mash_gain = 10.0
+			if skill_component and skill_component.is_skill_unlocked("H"):
+				mash_gain = 15.0 # 50% stronger struggling power
+			qte_progress = min(qte_target, qte_progress + mash_gain)
 			
 			var next_after_press = "any"
 			if last_qte_key == "left":
@@ -245,18 +263,16 @@ func start_qte():
 # Override Actor.apply_knockback to support scaled 3x force during grabbed/QTE triggers
 func apply_knockback(source_position: Vector2, force: float = 250.0):
 	var actual_force = force
-	var actual_upward = -180.0
+	var actual_upward = 0.0 # Standard knockback has zero Y bounce
 	var actual_duration = 0.25
 	
 	if _force_triple_knockback:
 		actual_force = force * 3.0
-		actual_upward = -350.0  # Launch player higher upward
+		actual_upward = -350.0  # Launch player higher upward for QTE
 		actual_duration = 0.5   # Prolong input lock duration
 		
-	var direction = (global_position - source_position).normalized()
-	if abs(direction.x) < 0.1:
-		direction.x = 1.0 if randf() > 0.5 else -1.0
-	velocity.x = direction.x * actual_force
+	var push_dir = 1.0 if global_position.x > source_position.x else -1.0
+	velocity.x = push_dir * actual_force
 	velocity.y = actual_upward
 	knockback_timer = actual_duration
 
@@ -293,6 +309,17 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 		_force_triple_knockback = true
 		
 	super(final_amount, source_position)
+	
+	# Apply Skill I: Hurt Reflection (reflect 30% of final_amount back to nearby enemies)
+	if skill_component and skill_component.is_skill_unlocked("I"):
+		var enemies = get_tree().get_nodes_in_group("enemies")
+		for enemy in enemies:
+			if is_instance_valid(enemy) and enemy.has_method("take_damage") and enemy.is_alive():
+				if global_position.distance_to(enemy.global_position) < 64.0:
+					var reflect_damage = int(round(final_amount * 0.3))
+					if reflect_damage > 0:
+						enemy.take_damage(reflect_damage, global_position)
+						print("[SKILL] Reflected ", reflect_damage, " damage to: ", enemy.name)
 	
 	if should_trigger_qte:
 		_force_triple_knockback = false
