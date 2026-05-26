@@ -53,10 +53,13 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 	# Position the player and clear velocity before adding to the tree
 	player_instance.position = spawn_pos
 	player_instance.velocity = Vector2.ZERO
+	if "spawn_point" in player_instance:
+		player_instance.spawn_point = spawn_pos
 	
 	# Add the persistent player node to the new scene
 	next_scene.add_child(player_instance)
 	player_instance.name = "Player"
+
 	
 	# Replace current scene in SceneTree
 	var root = get_tree().root

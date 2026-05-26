@@ -17,6 +17,7 @@ func _ready() -> void:
 	_build_map()
 	_restore_corpses()
 	_setup_camera_limits()
+	_apply_save_data()
 
 func _physics_process(_delta: float) -> void:
 	_maintain_enemies()
@@ -191,3 +192,22 @@ func _setup_camera_limits() -> void:
 	cam.limit_top    = 0
 	cam.limit_right  = COLS * TILE   # 1920
 	cam.limit_bottom = ROWS * TILE   # 640
+
+# ── APPLY SAVE DATA ─────────────────────────────────────────────────────────
+func _apply_save_data() -> void:
+	var save_mgr = get_node_or_null("/root/SaveManager")
+	if not save_mgr or save_mgr.current_slot < 0:
+		return
+
+	await get_tree().process_frame
+	var player = get_tree().get_first_node_in_group("player")
+	if player:
+		save_mgr.apply_save_to_player(player)
+		
+		# If dash cooldown has already been upgraded, remove the upgrade item node
+		if player.dash_component and player.dash_component.dash_cooldown < 0.8:
+			var item = get_node_or_null("DashUpgradeItem")
+			if item:
+				item.queue_free()
+				print("[LEVEL] Removed DashUpgradeItem since it was already collected.")
+

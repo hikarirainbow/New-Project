@@ -121,6 +121,11 @@ func _interact(player: Node2D) -> void:
 			gradient.set_color(1, Color(0.2, 0.8, 1.0, 0.0))
 		print("[CHECKPOINT] Activated and saved spawn point at: ", global_position)
 		
+	# Auto-save to current slot
+	var save_mgr = get_node_or_null("/root/SaveManager")
+	if save_mgr and save_mgr.current_slot >= 0:
+		save_mgr.save_game(save_mgr.current_slot)
+	
 	# Open inventory and switch to Skill Tree tab (tab 2)
 	var inventory = get_tree().current_scene.get_node_or_null("Inventory")
 	if inventory:

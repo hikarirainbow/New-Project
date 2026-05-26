@@ -44,9 +44,11 @@ func _input(event):
 
 	# Nhấn ESC để đóng/mở menu cài đặt
 	if Input.is_action_just_pressed("ui_cancel"):
-		var inventory = get_tree().current_scene.get_node_or_null("Inventory")
-		if inventory and inventory.is_open:
-			return
+		var current_scene = get_tree().current_scene
+		if current_scene:
+			var inventory = current_scene.get_node_or_null("Inventory")
+			if inventory and inventory.is_open:
+				return
 		toggle_menu()
 		get_viewport().set_input_as_handled()
 		return

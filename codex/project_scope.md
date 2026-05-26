@@ -30,3 +30,7 @@ STATUS:
 - Dash Upgrade Item: DONE
 - 2D Lighting & Shadows (CanvasModulate Color(0.25,0.18,0.35), Player PointLight2D 600px radial, cubic smoothstep interpolation, Tile LightOccluder2D square polygon, shadow opacity 70%, background ColorRect deep purple): DONE
 - Enemy Spawner (procedural ground coordinates spawner, maintains 5 alive GrabEnemies, >300px distance threshold): DONE
+- Main Menu & Save Slots (Play, Settings, Quit, 4 slots with New/Continue/Delete): DONE
+- Save/Load Autoload (save_manager.gd, JSON persistent data in user://): DONE
+- Checkpoint Auto-save (saves current state to active slot on Rest): DONE
+

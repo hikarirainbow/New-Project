@@ -54,13 +54,24 @@ OCCLUDERS: LightOccluder2D on MapTile with size 32x32px. occluder_light_mask = 2
 BACKGROUND: ColorRect Color(0.12, 0.08, 0.2) dark purple background canvas.
 SPAWNER: Procedural spawner maintaining at least 5 alive GrabEnemies. Spawn positions are ground tiles with empty cells above, >300px distance threshold.
 
-## Settings & Save
-SAVE: user://input_config.json
-BIND_DEFAULTS: move_left=A(65), move_right=D(68), jump=Space(32), dash=C(67), attack=X(88)
-PAUSE: ESC toggles pause. Sets MOUSE_MODE_VISIBLE (pause) / MOUSE_MODE_CAPTURED (play)
-MUTE: Toggles AudioServer bus 0
-RESET: Restores defaults, overwrites JSON
-STYLE: Buttons flat, hover shows StyleBoxFlat border_width_bottom=2px
+## Settings, Save & Load System
+- **Input Config:** Saved in `user://input_config.json`. Enforces key bindings: `move_left=A`, `move_right=D`, `jump=Space`, `dash=C`, `attack=X`, `interact=E`.
+- **Game Save Slots:** Supports 4 slots saved under a dedicated folder as `user://saves/save_slot_X.json` (where X is 0 to 3).
+- **Save Data Fields:**
+  - `slot_index` (int): Slot identifier.
+  - `scene_path` (String): Scene file path (e.g. `res://scenes/levels/sandbox_level.tscn`).
+  - `spawn_point_x` / `spawn_point_y` (float): Last active checkpoint or spawn position.
+  - `skill_points` (int) & `unlocked_skills` (Dictionary): Skill status from `SkillComponent`.
+  - `sanity` (float): Sanity value from `CorruptionComponent`.
+  - `current_health` / `max_health` (int) & `is_debuffed` (bool): Player health status.
+  - `play_time_sec` (int): Total gameplay time (accumulated).
+  - `timestamp` (String): Real-world datetime when the save occurred (`YYYY-MM-DD HH:MM`).
+- **Main Menu UI (`main_menu.tscn`):**
+  - Styled with deep purple theme, flat buttons.
+  - Options: **Play** (shows slot selection panel), **Settings** (opens input config overlay), **Quit** (closes game).
+  - **Save Slots Window:** 2x2 grid representing the 4 slots. If empty, displays "New Game". If occupied, displays play time, current level, save date/time, and adds a **Continue** option along with a delete **✕** button.
+  - Auto-saves whenever interacting with a checkpoint.
+
 
 ## Room & Portal Transition System
 PORTAL_VISUAL: 32x64px solid white rectangle (drawn dynamically in _draw()).
@@ -100,3 +111,7 @@ PERSISTENCE_TRICK (RoomManager Autoload):
 - Refined player/enemy knockback vectors: removed Y bounce for standard hits, preserving vertical launches only for QTE and above-head slashes.
 - Implemented room-bound Corpse Persistence system in RoomManager and SandboxLevel to keep dead bodies (max 15/room) intact during room transitions.
 - Integrated checkpoint E-interact to automatically wipe room and memory corpses to prevent pileup and lag.
+- Implemented SaveManager autoload to support saving and loading player stats (HP, sanity, skill points, unlocked skills, level scene path, position, timestamp) across 4 slots as JSON files.
+- Programmed a code-driven Main Menu scene (deep purple bg, Play/Settings/Quit buttons) with an integrated 2x2 grid Slot Selection Window supporting Continue, New Game, and Delete save slot.
+- Configured Checkpoints to auto-save to the active slot upon player interaction.
+- Resolved settings menu crash on Main Menu by adding null guards for the inventory.
