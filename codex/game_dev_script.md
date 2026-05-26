@@ -81,3 +81,4 @@ PERSISTENCE_TRICK (RoomManager Autoload):
 - Reduced ambient light (CanvasModulate) brightness in dark areas to 8/255 (nearly pitch-black overlay).
 - Enabled 2D physics interpolation and configured canvas_items stretch mode with Nearest texture filtering to eliminate movement jitter and enable smooth subpixel movement.
 - Created RoomManager autoload and RoomPortal to implement seamless room transitions without reloading/killing the player.
+- Implemented a smooth quick screen fade-out and fade-in (0.15s each) during room transitions to cover the scene swap.
