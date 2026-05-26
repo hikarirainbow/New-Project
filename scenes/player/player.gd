@@ -17,6 +17,7 @@ var is_debuffed = false
 @export var damage_invincibility_duration: float = 0.5
 var invincibility_timer = 0.0
 var is_invincible = false
+var recoil_timer: float = 0.0
 
 # Quick Time Event (QTE) tracking variables
 var qte_progress: float = 0.0
@@ -63,6 +64,9 @@ func _ready():
 func _physics_process(delta):
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
+
+	if recoil_timer > 0.0:
+		recoil_timer -= delta
 		
 	# Process invincibility timer and sprite flashing effect
 	if invincibility_timer > 0.0:
@@ -90,7 +94,7 @@ func _physics_process(delta):
 func handle_move_state(delta):
 	# If attacking, lock control direction and brake horizontal movement on floor
 	if attack_component.is_attacking():
-		if is_on_floor():
+		if is_on_floor() and recoil_timer <= 0.0:
 			velocity.x = 0.0
 		if not is_on_floor():
 			var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
@@ -365,4 +369,5 @@ func shake_camera(direction_x: float, intensity: float = 8.0, duration: float = 
 func apply_melee_recoil(direction_x: float, force: float = 160.0) -> void:
 	# Recoil pushback in opposite direction of slash
 	velocity.x = -direction_x * force
+	recoil_timer = 0.08
 	move_and_slide()

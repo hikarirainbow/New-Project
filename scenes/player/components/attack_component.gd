@@ -108,6 +108,8 @@ func _on_attack_body_entered(body: Node2D) -> void:
 	var is_facing_left = player.get_node("Sprite2D").flip_h if player.has_node("Sprite2D") else false
 	var slash_dir = -1.0 if is_facing_left else 1.0
 
+	print("[ATTACK DEBUG] Overlapped body: ", body.name, " (class: ", body.get_class(), ", layer: ", body.collision_layer, ")")
+
 	# Case A: Hit an enemy or destructible object
 	if body.has_method("take_damage") and not bodies_hit_this_attack.has(body):
 		bodies_hit_this_attack.append(body)
