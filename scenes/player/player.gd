@@ -18,6 +18,12 @@ var is_debuffed = false
 var invincibility_timer = 0.0
 var is_invincible = false
 
+# Biến trạng thái QTE (Quick Time Event)
+var qte_progress: float = 0.0
+var qte_target: float = 100.0
+var last_qte_key: String = ""
+var _force_triple_knockback: bool = false
+
 # Tín hiệu đặc thù phát đi khi người chơi chết
 signal player_defeated
 # Tín hiệu phát khi nhặt chìa khóa
@@ -120,8 +126,79 @@ func handle_move_state(delta):
 
 # Logic khi bị khống chế (Grabbed)
 func handle_grabbed_state(delta):
-	# Dừng mọi chuyển động vật lý, quái vật sẽ kéo hoặc đè Player
-	velocity = Vector2.ZERO
+	# Áp dụng trọng lực
+	if not is_on_floor():
+		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
+		velocity.y += active_gravity * delta
+
+	# Giảm tốc độ ngang dần khi knockback trôi qua
+	velocity.x = move_toward(velocity.x, 0, friction * delta)
+	
+	move_and_slide()
+	
+	# Suy giảm tiến trình QTE theo thời gian (decay)
+	qte_progress = max(0.0, qte_progress - delta * 15.0)
+	
+	var hud = get_tree().get_first_node_in_group("hud")
+	if hud:
+		hud.update_qte(qte_progress)
+		
+	# Kiểm tra nút nhấn spam di chuyển (A / D hoặc Mũi tên Trái / Phải)
+	var left_pressed = Input.is_action_just_pressed("move_left")
+	var right_pressed = Input.is_action_just_pressed("move_right")
+	
+	if left_pressed or right_pressed:
+		var valid_input = false
+		if left_pressed and last_qte_key != "left":
+			last_qte_key = "left"
+			valid_input = true
+		elif right_pressed and last_qte_key != "right":
+			last_qte_key = "right"
+			valid_input = true
+			
+		if valid_input:
+			qte_progress = min(qte_target, qte_progress + 10.0)
+			if hud:
+				hud.update_qte(qte_progress)
+				hud.trigger_qte_shake()
+				
+	# Nếu đã đủ tiến trình thoát khỏi khống chế
+	if qte_progress >= qte_target:
+		current_state = State.MOVE
+		if hud:
+			hud.hide_qte()
+		# Cho người chơi 0.5 giây bất tử để thoát đi an toàn
+		is_invincible = true
+		invincibility_timer = 0.5
+		if has_node("Sprite2D"):
+			$Sprite2D.modulate.a = 1.0
+
+# Bắt đầu trạng thái QTE
+func start_qte():
+	current_state = State.GRABBED
+	qte_progress = 0.0
+	last_qte_key = ""
+	var hud = get_tree().get_first_node_in_group("hud")
+	if hud:
+		hud.show_qte(qte_target)
+
+# Ghi đè hàm apply_knockback từ Actor để hỗ trợ knockback QTE mạnh gấp 3 lần
+func apply_knockback(source_position: Vector2, force: float = 250.0):
+	var actual_force = force
+	var actual_upward = -180.0
+	var actual_duration = 0.25
+	
+	if _force_triple_knockback:
+		actual_force = force * 3.0
+		actual_upward = -350.0  # Phóng bay mạnh hơn lên trên
+		actual_duration = 0.5   # Khóa phím điều khiển lâu hơn trong lúc bay
+		
+	var direction = (global_position - source_position).normalized()
+	if abs(direction.x) < 0.1:
+		direction.x = 1.0 if randf() > 0.5 else -1.0
+	velocity.x = direction.x * actual_force
+	velocity.y = actual_upward
+	knockback_timer = actual_duration
 
 # Logic khi bị đánh bại hoàn toàn (Defeated)
 func handle_defeated_state(delta):
@@ -133,19 +210,30 @@ func handle_defeated_state(delta):
 
 # Nhận sát thương và chịu đẩy lùi (Ghi đè lớp cha Actor để thêm miễn nhiễm)
 func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
-	if current_state == State.DEFEATED or is_invincible:
+	if current_state == State.DEFEATED or current_state == State.GRABBED or is_invincible:
 		return
 		
 	# Ngắt đòn đánh hoặc lướt khi trúng đòn
 	attack_component.interrupt()
 	dash_component.interrupt()
+	
+	var is_below_half_hp = current_health < max_health * 0.5
+	var would_survive = (current_health - amount) > 0
+	var should_trigger_qte = is_below_half_hp and would_survive
+	
+	if should_trigger_qte:
+		_force_triple_knockback = true
 		
 	super(amount, source_position)
 	
-	# Kích hoạt trạng thái bất tử sau khi nhận sát thương
-	if current_health > 0:
-		is_invincible = true
-		invincibility_timer = damage_invincibility_duration
+	if should_trigger_qte:
+		_force_triple_knockback = false
+		start_qte()
+	else:
+		# Kích hoạt trạng thái bất tử sau khi nhận sát thương nếu không bị QTE
+		if current_health > 0:
+			is_invincible = true
+			invincibility_timer = damage_invincibility_duration
 
 # Đánh bại nhân vật
 func die():
@@ -180,6 +268,11 @@ func respawn():
 	apply_debuff()
 	current_state = State.MOVE
 	dash_component.reset()
+	
+	# Đảm bảo ẩn thanh QTE nếu có khi hồi sinh
+	var hud = get_tree().get_first_node_in_group("hud")
+	if hud:
+		hud.hide_qte()
 
 # Nâng cấp kỹ năng lướt: Giảm một nửa thời gian hồi chiêu
 func upgrade_dash_cooldown():
