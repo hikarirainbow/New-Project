@@ -220,4 +220,3 @@ func _on_corpse_body_entered(body: Node2D) -> void:
 
 func is_alive() -> bool:
 	return current_state != State.DEAD
-

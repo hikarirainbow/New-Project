@@ -103,4 +103,3 @@ func reset() -> void:
 
 func upgrade_cooldown() -> void:
 	dash_cooldown = dash_cooldown / 2.0
-

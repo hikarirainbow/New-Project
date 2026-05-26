@@ -98,4 +98,3 @@ func get_defense_multiplier() -> float:
 
 func get_qte_decay_multiplier() -> float:
 	return base_qte_decay_multiplier + (corruption / max_sanity) * qte_decay_scaling_factor
-

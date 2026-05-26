@@ -200,4 +200,3 @@ func _draw() -> void:
 			2:
 				var x_pos = -68.0 if is_facing_left else 18.0
 				draw_rect(Rect2(x_pos, -15.0, 50.0, 48.0), Color(0.85, 0.15, 0.15, 0.6))
-

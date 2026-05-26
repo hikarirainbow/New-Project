@@ -56,4 +56,3 @@ func apply_knockback(source_position: Vector2, force: float = 250.0) -> void:
 # Death callback (must be overridden by subclasses)
 func die() -> void:
 	actor_died.emit()
-

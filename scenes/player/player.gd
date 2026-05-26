@@ -420,4 +420,3 @@ func apply_melee_recoil(direction_x: float, force: float = 160.0) -> void:
 	velocity.x = -direction_x * force
 	recoil_timer = melee_recoil_duration
 	move_and_slide()
-
