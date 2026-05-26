@@ -9,6 +9,13 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 		return
 	is_transitioning = true
 	
+	# 1. Fade out the old scene's HUD
+	var current_scene = get_tree().current_scene
+	if current_scene:
+		var old_hud = current_scene.get_node_or_null("HUD")
+		if old_hud and old_hud.has_method("fade_to_black"):
+			await old_hud.fade_to_black(0.15).finished
+	
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
 		player_instance = player
@@ -23,6 +30,13 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 	if new_player:
 		next_scene.remove_child(new_player)
 		new_player.queue_free()
+		
+	# Find the new HUD and set it to fully black immediately to prevent transition pop/flash
+	var new_hud = next_scene.get_node_or_null("HUD")
+	if new_hud:
+		var screen_fade = new_hud.get_node_or_null("Control/ScreenFade")
+		if screen_fade:
+			screen_fade.color = Color(0, 0, 0, 1)
 	
 	# Determine spawn position based on target portal (hardcoded offsets to prevent dependency on uninitialized nodes)
 	var spawn_pos = Vector2(160, 576) # Fallback
@@ -66,8 +80,11 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 		cam.position_smoothing_enabled = true
 		cam.reset_smoothing()
 		
-	var hud = next_scene.get_node_or_null("HUD")
-	if hud and hud.has_method("setup_player"):
-		hud.setup_player(player_instance)
+	# Setup new HUD and trigger fade in
+	if new_hud:
+		if new_hud.has_method("setup_player"):
+			new_hud.setup_player(player_instance)
+		if new_hud.has_method("fade_from_black"):
+			new_hud.fade_from_black(0.15)
 		
 	is_transitioning = false

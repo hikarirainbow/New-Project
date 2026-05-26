@@ -50,6 +50,18 @@ func _on_player_health_changed(new_health):
 func update_label(current, maximum):
 	health_label.text = "HP: %d / %d" % [current, maximum]
 
+# Fade out the screen to black
+func fade_to_black(duration: float = 0.15) -> Tween:
+	var fade_tween = create_tween()
+	fade_tween.tween_property(screen_fade, "color", Color(0, 0, 0, 1), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	return fade_tween
+
+# Fade in the screen to transparent
+func fade_from_black(duration: float = 0.15) -> Tween:
+	var fade_tween = create_tween()
+	fade_tween.tween_property(screen_fade, "color", Color(0, 0, 0, 0), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	return fade_tween
+
 # Xử lý sự kiện khi nhân vật bị đánh bại hoàn toàn (hiệu ứng chuyển màn hình đen và hồi sinh)
 func _on_player_defeated():
 	var player = get_tree().get_first_node_in_group("player")
@@ -57,11 +69,7 @@ func _on_player_defeated():
 		return
 		
 	# 1. Làm tối đen màn hình (Fade to Black)
-	var fade_tween = create_tween()
-	fade_tween.tween_property(screen_fade, "color", Color(0, 0, 0, 1), 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	
-	# Đợi hiệu ứng fade hoàn thành
-	await fade_tween.finished
+	await fade_to_black(0.5).finished
 	
 	# 2. Hồi sinh nhân vật (đưa về spawn point, phục hồi HP đã debuff)
 	player.respawn()
@@ -70,8 +78,7 @@ func _on_player_defeated():
 	await get_tree().create_timer(0.2).timeout
 	
 	# 3. Làm sáng lại màn hình (Fade to Transparent)
-	var fade_out_tween = create_tween()
-	fade_out_tween.tween_property(screen_fade, "color", Color(0, 0, 0, 0), 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	fade_from_black(0.5)
 
 # Cập nhật HUD khi Player nhặt chìa khóa
 func _on_key_collected(key_name: String):
