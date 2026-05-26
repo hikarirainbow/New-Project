@@ -9,75 +9,65 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 		return
 	is_transitioning = true
 	
-	var current_scene = get_tree().current_scene
 	var player = get_tree().get_first_node_in_group("player")
-	
 	if player:
 		player_instance = player
 		# Remove player from current scene so it isn't deleted
 		player.get_parent().remove_child(player)
 	
-	# Load the new scene
-	get_tree().change_scene_to_file(room_scene_path)
+	# Instantiate the new scene (Room B)
+	var next_scene = load(room_scene_path).instantiate()
 	
-	# Wait for the node_added signal to know when the new scene is added
-	await get_tree().node_added
-	# Wait for a frame to ensure all nodes are fully ready
-	await get_tree().process_frame
+	# Remove the default Player node in the new scene immediately so it never enters the tree or renders
+	var new_player = next_scene.get_node_or_null("Player")
+	if new_player:
+		next_scene.remove_child(new_player)
+		new_player.queue_free()
 	
-	var new_scene = get_tree().current_scene
-	if new_scene and player_instance:
-		# Remove the newly instantiated player in the new scene to avoid duplicates
-		var new_player = new_scene.get_node_or_null("Player")
-		if new_player:
-			new_player.remove_from_group("player")
-			new_player.queue_free()
+	# Determine spawn position based on target portal (hardcoded offsets to prevent dependency on uninitialized nodes)
+	var spawn_pos = Vector2(160, 576) # Fallback
+	if spawn_at_portal == "left":
+		spawn_pos = Vector2(64, 576) # Left portal (16, 576) + offset (48)
+	elif spawn_at_portal == "right":
+		spawn_pos = Vector2(1856, 576) # Right portal (1904, 576) - offset (48)
 		
-		# Find the target portal to position the player before adding them to the tree
-		var target_portal = null
-		for portal in get_tree().get_nodes_in_group("portals"):
-			if portal.portal_id == spawn_at_portal:
-				target_portal = portal
-				break
+	# Position the player and clear velocity before adding to the tree
+	player_instance.position = spawn_pos
+	player_instance.velocity = Vector2.ZERO
+	
+	# Add the persistent player node to the new scene
+	next_scene.add_child(player_instance)
+	player_instance.name = "Player"
+	
+	# Replace current scene in SceneTree
+	var root = get_tree().root
+	var old_scene = get_tree().current_scene
+	if old_scene:
+		root.remove_child(old_scene)
+		old_scene.queue_free()
 		
-		var spawn_pos = Vector2(160, 576)
-		if target_portal:
-			spawn_pos = target_portal.global_position
-			# Offset player horizontally to prevent immediate loop triggering
-			if spawn_at_portal == "left":
-				spawn_pos.x += 48
-			elif spawn_at_portal == "right":
-				spawn_pos.x -= 48
+	root.add_child(next_scene)
+	get_tree().current_scene = next_scene
+	
+	# Reset camera and physics interpolation
+	player_instance.reset_physics_interpolation()
+	
+	var cam = player_instance.get_node_or_null("Camera2D")
+	if cam:
+		cam.make_current() # Force this camera to be active in the new scene
+		cam.position_smoothing_enabled = false
+		cam.limit_left = 0
+		cam.limit_top = 0
+		cam.limit_right = 1920 # 60 * 32
+		cam.limit_bottom = 640 # 20 * 32
+		cam.global_position = player_instance.global_position
+		cam.reset_physics_interpolation()
+		cam.force_update_scroll()
+		cam.position_smoothing_enabled = true
+		cam.reset_smoothing()
 		
-		# Set player position BEFORE adding to the tree to avoid triggering portals
-		player_instance.position = spawn_pos
-		player_instance.velocity = Vector2.ZERO
+	var hud = next_scene.get_node_or_null("HUD")
+	if hud and hud.has_method("setup_player"):
+		hud.setup_player(player_instance)
 		
-		# Add our persistent player node
-		new_scene.add_child(player_instance)
-		player_instance.name = "Player"
-		
-		# Reset physics interpolation to prevent teleportation visual glitches
-		player_instance.reset_physics_interpolation()
-		
-		# Reset camera smoothing and limits
-		var cam = player_instance.get_node_or_null("Camera2D")
-		if cam:
-			cam.make_current() # Force this camera to be active in the new scene
-			cam.position_smoothing_enabled = false
-			cam.limit_left = 0
-			cam.limit_top = 0
-			cam.limit_right = 1920 # 60 * 32
-			cam.limit_bottom = 640 # 20 * 32
-			cam.global_position = player_instance.global_position
-			cam.reset_physics_interpolation()
-			cam.force_update_scroll()
-			cam.position_smoothing_enabled = true
-			cam.reset_smoothing()
-		
-		# Explicitly update the new scene's HUD with the persistent player
-		var hud = new_scene.get_node_or_null("HUD")
-		if hud and hud.has_method("setup_player"):
-			hud.setup_player(player_instance)
-			
 	is_transitioning = false
