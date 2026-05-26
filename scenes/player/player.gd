@@ -366,4 +366,3 @@ func apply_melee_recoil(direction_x: float, force: float = 160.0) -> void:
 	# Recoil pushback in opposite direction of slash
 	velocity.x = -direction_x * force
 	move_and_slide()
-

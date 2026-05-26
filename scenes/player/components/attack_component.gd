@@ -31,6 +31,13 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if attack_timer > 0.0:
 		attack_timer -= delta
+		
+		# Manual query for overlapping bodies to handle static tiles and overlap quirks
+		var attack_area = player.get_node_or_null("AttackArea")
+		if attack_area:
+			for body in attack_area.get_overlapping_bodies():
+				_on_attack_body_entered(body)
+				
 		queue_redraw()
 		if attack_timer <= 0.0:
 			end_attack()
