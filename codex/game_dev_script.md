@@ -32,7 +32,7 @@ SUCCESS: pushback, heal minor, resume play
 FAILURE: DEFEATED state -> fade out (0.5s) -> relocate to spawn_point -> heal (+9999) -> apply debuff -> fade in (0.5s)
 
 ## Level Design (Sandbox)
-DISPLAY: Viewport 640x360 (16:9 pixel-art canvas). Window override 1280x720 (2x integer scaling). Stretch Mode = "viewport", Stretch Aspect = "keep" (keeps pixels sharp, adds letterbox/pillarbox for non-16:9 screens). Default Texture Filter = "Nearest" (for crisp pixels). Global shortcuts: F11 or Alt+Enter toggles fullscreen via InputManager.
+DISPLAY: Viewport 640x360 (16:9 pixel-art canvas). Window override 1280x720 (2x scaling). Stretch Mode = "canvas_items", Stretch Aspect = "keep" with Default Texture Filter = "Nearest" (enables crisp pixels with smooth subpixel motion). Physics Interpolation = enabled (eliminates 60Hz physics/movement jitter for buttery smooth per-pixel translation on high refresh rate monitors). Global shortcuts: F11 or Alt+Enter toggles fullscreen via InputManager.
 GRID: 32x32 tile
 MAP: 60 cols x 20 rows (1920x640 px)
 FLOOR: row 19 (top edge y=608)
@@ -68,3 +68,4 @@ STYLE: Buttons flat, hover shows StyleBoxFlat border_width_bottom=2px
 
 ### 2026-05-26
 - Reduced ambient light (CanvasModulate) brightness in dark areas to 8/255 (nearly pitch-black overlay).
+- Enabled 2D physics interpolation and configured canvas_items stretch mode with Nearest texture filtering to eliminate movement jitter and enable smooth subpixel movement.
