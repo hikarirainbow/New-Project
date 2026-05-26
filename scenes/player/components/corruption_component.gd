@@ -37,8 +37,8 @@ func _physics_process(delta: float) -> void:
 
 	# 2. Continuous time-based polling (framerate independent decay/recovery)
 	if player.current_state == Player.State.MOVE:
-		# Passive recovery when idle/walking: +1.0 sanity / sec
-		add_sanity(delta * 1.0)
+		# Passive recovery when idle/walking: +5.0 sanity / sec (5x recovery rate)
+		add_sanity(delta * 5.0)
 
 # Helper to safely decrease sanity
 func subtract_sanity(amount: float) -> void:
