@@ -22,6 +22,7 @@ COMPONENTS (Component-based architecture to reduce player.gd complexity):
 - AttackComponent (Node2D): Manages the 3-hit melee combo mechanics, dynamic shape scaling, and visual indicators.
 - DashComponent (Node): Manages dash cooldowns, speed calculations, movement locks, and iframes.
 - LightComponent (Node2D): Configures and instantiates the PointLight2D radial flashlight.
+- ClimbComponent (Node2D): Manages dynamic point-free ledge detection, auto-correction check, L-shaped LERP animation, and scale squashing/stretching.
 
 
 ## Upgrade Item
@@ -88,3 +89,5 @@ PERSISTENCE_TRICK (RoomManager Autoload):
 - Created RoomManager autoload and RoomPortal to implement seamless room transitions without reloading/killing the player.
 - Implemented a smooth quick screen fade-out and fade-in (0.15s each) during room transitions to cover the scene swap.
 - Refactored player.gd using a Component-based architecture, extracting AttackComponent, DashComponent, and LightComponent to decrease code complexity.
+- Modularized the Ledge Climb system by extracting all raycast checks, auto-correction, L-shaped LERP animation, and damage interrupts into a decoupled `ClimbComponent` node. Integrated it in `player.tscn`.
+- Cleaned up magic numbers/integers in components to use `Player.State` enum (e.g. `Player.State.CLIMB`, `Player.State.DASH`, `Player.State.MOVE`).
