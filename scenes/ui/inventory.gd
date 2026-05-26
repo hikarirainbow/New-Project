@@ -24,6 +24,12 @@ func _ready():
 	switch_tab(0)
 
 func _input(event):
+	# Nếu hành trang đang mở, cho phép nhấn phím Nhảy (Jump) để đóng
+	if Input.is_action_just_pressed("jump") and is_open:
+		toggle_inventory()
+		get_viewport().set_input_as_handled()
+		return
+
 	# Nhấn phím 'inventory' để đóng/mở hành trang
 	if Input.is_action_just_pressed("inventory"):
 		var settings = get_tree().current_scene.get_node_or_null("SettingsMenu")
@@ -31,11 +37,26 @@ func _input(event):
 			return # Không cho phép mở nếu menu cài đặt đang mở
 		toggle_inventory()
 		get_viewport().set_input_as_handled()
+		return
 		
 	# Nhấn ESC để đóng hành trang nếu nó đang mở
-	elif Input.is_action_just_pressed("ui_cancel") and is_open:
+	if Input.is_action_just_pressed("ui_cancel") and is_open:
 		toggle_inventory()
 		get_viewport().set_input_as_handled()
+		return
+		
+	# Điều hướng tab trái/phải bằng các nút di chuyển tương ứng
+	if is_open:
+		if Input.is_action_just_pressed("move_left"):
+			switch_tab(0)
+			get_viewport().set_input_as_handled()
+		elif Input.is_action_just_pressed("move_right"):
+			switch_tab(1)
+			get_viewport().set_input_as_handled()
+		elif Input.is_action_just_pressed("attack"):
+			var active_btn = map_button if active_tab == 0 else items_button
+			active_btn.pressed.emit()
+			get_viewport().set_input_as_handled()
 
 func toggle_inventory():
 	is_open = !is_open

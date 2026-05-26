@@ -22,14 +22,7 @@ func _ready():
 	setup_remap_buttons()
 
 func _input(event):
-	# Nhấn ESC để đóng/mở menu cài đặt
-	if Input.is_action_just_pressed("ui_cancel"):
-		var inventory = get_tree().current_scene.get_node_or_null("Inventory")
-		if inventory and inventory.is_open:
-			return
-		toggle_menu()
-		
-	# Nếu đang chờ nhập phím để thay đổi nút
+	# Nếu đang chờ nhập phím để thay đổi nút (remapping)
 	if is_open and remapping_action != "":
 		if event is InputEventKey and event.is_pressed():
 			var new_keycode = event.physical_keycode
@@ -40,6 +33,37 @@ func _input(event):
 				update_button_text(remapping_action, new_keycode)
 				
 			remapping_action = ""
+			get_viewport().set_input_as_handled()
+		return
+
+	# Phím nhảy (Jump) làm phím thoát menu
+	if Input.is_action_just_pressed("jump") and is_open:
+		toggle_menu()
+		get_viewport().set_input_as_handled()
+		return
+
+	# Nhấn ESC để đóng/mở menu cài đặt
+	if Input.is_action_just_pressed("ui_cancel"):
+		var inventory = get_tree().current_scene.get_node_or_null("Inventory")
+		if inventory and inventory.is_open:
+			return
+		toggle_menu()
+		get_viewport().set_input_as_handled()
+		return
+		
+	# Điều hướng trái/phải để luân chuyển tiêu điểm giữa các nút
+	if is_open:
+		if Input.is_action_just_pressed("move_left"):
+			_navigate_menu(-1)
+			get_viewport().set_input_as_handled()
+		elif Input.is_action_just_pressed("move_right"):
+			_navigate_menu(1)
+			get_viewport().set_input_as_handled()
+		elif Input.is_action_just_pressed("attack"):
+			var current_focus = get_viewport().gui_get_focus_owner()
+			if current_focus is Button:
+				current_focus.pressed.emit()
+			get_viewport().set_input_as_handled()
 
 # Đóng/mở menu cài đặt
 func toggle_menu():
@@ -51,9 +75,46 @@ func toggle_menu():
 		# Hiện chuột khi mở Menu
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		setup_remap_buttons() # Tải lại phím bấm mới nhất
+		
+		# Tự động focus nút đầu tiên sau khi load
+		await get_tree().process_frame
+		var buttons = _get_menu_buttons()
+		if not buttons.is_empty():
+			buttons[0].grab_focus()
 	else:
 		# Ẩn chuột và khóa vào màn hình khi quay lại chơi game
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+# Thu thập danh sách các nút bấm có thể focus
+func _get_menu_buttons() -> Array[Button]:
+	var list: Array[Button] = []
+	for child in remap_container.get_children():
+		if child is Button:
+			list.append(child)
+	list.append(mute_button)
+	list.append(reset_button)
+	return list
+
+# Điều hướng tiêu điểm nút
+func _navigate_menu(direction: int):
+	var buttons = _get_menu_buttons()
+	if buttons.is_empty():
+		return
+		
+	var current_focus = get_viewport().gui_get_focus_owner()
+	var current_index = -1
+	
+	if current_focus in buttons:
+		current_index = buttons.find(current_focus)
+		
+	var next_index = 0
+	if current_index != -1:
+		next_index = (current_index + direction + buttons.size()) % buttons.size()
+	else:
+		next_index = 0 if direction > 0 else buttons.size() - 1
+		
+	buttons[next_index].grab_focus()
+
 
 # Khởi tạo các hàng phím bấm điều khiển để remap
 func setup_remap_buttons():
