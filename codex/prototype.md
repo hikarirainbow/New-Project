@@ -1,66 +1,71 @@
-# PROTOTYPE STORY & ENDINGS DESIGN
-(Thiết kế Cốt truyện & Phân nhánh Kết thúc - Phiên bản Prototype)
+# LUSTGOD — PROTOTYPE DESIGN & LORE
+(Tài liệu Thiết kế & Cốt truyện - Phiên bản Mẫu thử)
 
-Tài liệu này tóm tắt cấu trúc cốt truyện và các phân nhánh kết thúc (Endings) của Prototype, đồng thời tích hợp các cơ chế Gameplay cốt lõi để tạo ra sự cộng hưởng tối đa giữa lối chơi hành động và yếu tố kể chuyện H-18.
-
----
-
-## 1. Cốt Truyện Tổng Quan (Narrative Premise)
-
-* **Nhân vật chính:** Một cô thầy cúng (Miko/Shaman) mang trong mình dòng máu thanh tẩy thần thánh.
-* **Biến cố kích hoạt (Inciting Incident):** Để cứu người bạn thân thuở nhỏ khỏi một dịch bệnh quỷ dị đang ăn mòn linh hồn, cô phải lún sâu vào thế giới quỷ giới (Demon Realm) để tìm thuốc giải.
-* **Giao kèo bóng tối:** Tại ranh giới quỷ giới, cô gặp **Quỷ dục vọng (Demon of Lust)** - một trong Thất Đại Tội. Hiện con quỷ này đang bị cô lập và lép vế do các cuộc tranh giành quyền lực nội bộ.
-  * *Thỏa thuận:* Con quỷ ban cho cô sức mạnh bóng tối (Dash, Combo ẩn, Sức mạnh Dục vọng) và hứa sẽ cứu mạng người bạn thuở nhỏ.
-  * *Điều kiện:* Cô phải săn lùng và mang về **đầu của 6 con quỷ đại tội khác** (Gluttony, Wrath, Pride, Sloth, Greed, Envy) để giúp nó thống nhất quỷ giới.
+Tài liệu này định hình phong cách nghệ thuật, cấu trúc cốt truyện, các phân nhánh kết thúc (Endings) và lộ trình phát triển của dự án **Lustgod**. Dự án kết hợp lối chơi đi cảnh khám phá bán mở (Metroidvania) chất lượng cao với các cơ chế H-18 sâu sắc và bi tráng.
 
 ---
 
-## 2. Phân Nhánh 3 Kết Thúc (Multi-Endings)
+## 1. Tầm Nhìn Dự Án & Phong Cách Lối Chơi (Game Vision)
 
-Để tạo động lực chơi lại nhiều lần (Replayability) và thỏa mãn các tệp người chơi khác nhau, game sẽ có 3 kết thúc đặc trưng:
-
-### 🖤 Ending 1: "Đồ Chơi Của Quỷ" (Corrupted / Bad Ending)
-* **Mô tả:** Cô thầy cúng hoàn toàn đánh mất nhân tính, tâm trí bị dục vọng quỷ dữ nuốt chửng. Cô trở thành nô lệ thể xác và món đồ chơi giải trí vĩnh viễn cho con Quỷ dục vọng đồng minh.
-* **Tệp người chơi:** Dành cho những ai muốn trải nghiệm nội dung H-18 thuần túy nhất.
-* **Điều kiện mở khóa:** Điểm Tỉnh Táo (`sanity`) cực thấp do thua trận liên tục, bị dính nhiều cảnh H hoặc lạm dụng quá đà năng lượng tha hóa của quỷ.
-
-### 😈 Ending 2: "Chúa Quỷ Tối Cao" (Dark / Power-Fantasy Ending)
-* **Mô tả:** Nhận ra bộ mặt thật đầy dối trá của Quỷ dục vọng sau khi hạ gục 6 đại tội, cô thầy cúng quyết định "hóa quỷ" hoàn toàn. Cô quay lưng đồ sát luôn con Quỷ dục vọng đồng minh, cướp đoạt ngai vàng và trở thành **Chúa Quỷ tối cao duy nhất** thống trị quỷ giới với quyền năng vô hạn.
-* **Tệp người chơi:** Dành cho những ai đam mê hành động hardcore, sức mạnh bá đạo và phong cách báo thù đen tối.
-* **Điều kiện mở khóa:** Điểm Tỉnh Táo ở mức trung bình/cao, và người chơi chủ động chọn **"Đồ sát đồng minh"** trước trận chiến cuối cùng (Kích hoạt Boss ẩn: Quỷ Dục Vọng).
-
-### 👼 True Ending: "Thánh Nữ U Buồn" (The Tragic Saint / Bittersweet Ending)
-* **Mô tả:** Cô thầy cúng kiên cường giữ vững đức tin thanh khiết, vượt qua mọi cám dỗ. Ở trận chiến cuối cùng, cô chấp nhận **hy sinh toàn bộ thần lực và linh hồn** để thanh tẩy dịch bệnh cho người bạn. Linh hồn người bạn được giải thoát hoàn toàn, nhưng thể xác của cậu ấy đã không chịu nổi và qua đời trước đó. Cô được thần linh phong làm Thánh nữ, thoát khỏi quỷ giới và trở về thế giới loài người để thăm mộ người bạn thuở nhỏ trong cô độc u sầu.
-* **Tệp người chơi:** Dành cho những game thủ yêu thích cốt truyện nghệ thuật, cảm xúc sâu sắc và bi tráng (Bittersweet).
-* **Điều kiện mở khóa:** Giữ điểm Tỉnh Táo ở mức cao, hoàn thành chuỗi nhiệm vụ **"Sám hối / Thanh tẩy"** trước trận chiến cuối và chọn hy sinh bản thân để cứu bạn.
+* **Tên dự án chính thức:** **Lustgod**
+* **Cảm hứng cốt lõi:** Lối chơi khám phá chiều sâu, bản đồ đan xen rộng lớn, truy tìm bí mật cổ xưa và khiêu chiến thần quyền tương tự như *Hollow Knight* và *Silksong*.
+* **Bầu không khí & Mỹ thuật:** Sử dụng tối đa thế mạnh đồ họa 2D hiện có (Ánh sáng tương phản cực cao, bóng tối bao trùm, và hiệu ứng đổ bóng đen Silhouette của quái vật). Thế giới loài quỷ không chỉ có sự gớm ghiếc, mà mang một nét u sầu, bi tráng của những tàn tích rêu phong cổ kính.
 
 ---
 
-## 3. Tích Hợp Gameplay & Kể Chuyện (Narrative-Gameplay Integration)
+## 2. Cốt Truyện & Ý Tưởng Cựu Thần Già Cỗi (Fading Gods Lore)
 
-Để cốt truyện không bị tách rời khỏi lối chơi, hệ thống sẽ sử dụng một biến số ẩn: **Điểm Tỉnh Táo (`sanity_points`)** từ `0` đến `100`.
-
-### A. Cơ chế Tha Hóa & Sức Mạnh (Lust & Corruption)
-* **High Risk - High Reward:** Khi sử dụng các kỹ năng đặc biệt của quỷ (như Lướt bất tử, Combo gây sát thương lớn), thanh Tha hóa tăng lên (điểm `sanity` giảm).
-* Sát thương của người chơi tăng tỷ lệ thuận với độ tha hóa (giúp người chơi cảm thấy bá đạo đúng kiểu "Human vs God").
-* **Cái giá phải trả:** Khi tha hóa càng cao, người chơi sẽ nhận thêm sát thương từ quái vật và **rất dễ bị quái vật vồ trúng khống chế** (tăng tần suất kích hoạt cơ chế QTE thoát hiểm).
-
-### B. Cơ chế QTE & Cảnh H-18
-* Khi bị quái vật vồ trúng, người chơi phải spam phím QTE (A/D) cực nhanh để đẩy quái ra:
-  * **QTE Thành công:** Đẩy quái ra, hồi một lượng máu nhỏ, phục hồi một chút `sanity`.
-  * **QTE Thất bại / Bị hạ gục:** Kích hoạt cảnh H-18 trực tiếp từ quái/boss đó. Sau cảnh H, người chơi bị trừ mạnh điểm `sanity`.
-
-### C. Cơ chế Chuộc Tội (Redemption)
-* Tránh tình trạng người chơi True Ending bị "tước quyền lợi" xem cảnh H.
-* Người chơi có thể tự do xem các cảnh H trong quá trình đi màn, nhưng trước trận chiến quyết định, họ có thể đến các **"Hồ Nước Thánh"** hoặc làm nhiệm vụ sám hối ẩn để thanh lọc bản thân, khôi phục lại điểm `sanity` nhằm hướng tới True Ending nếu muốn.
+* **Nhân vật chính:** Một cô thầy cúng (Miko/Shaman) mang trong mình dòng máu thanh tẩy thần thánh tinh khiết.
+* **Khởi đầu (Inciting Incident):** Bạn thân thuở nhỏ bị nhiễm quỷ dịch ăn mòn linh hồn. Để tìm thuốc giải, cô dấn thân vào Quỷ Giới (Demon Realm) huyền bí.
+* **Giao kèo với Quỷ Dực (Demon of Lust):** Cô gặp một trong Thất Đại Tội - Quỷ Dục Vọng, hiện đang bị thất thế và suy yếu do cuộc chiến vương quyền nội bộ.
+  * *Hỗ trợ:* Nó trao cho cô năng lượng quỷ (Dash, Combo, phép thuật) để sinh tồn và hứa sẽ cứu bạn thân cô.
+  * *Điều kiện:* Cô phải săn lùng đầu của **6 Cựu Thần Đại Tội** khác cai trị 6 vùng đất cổ xưa của Quỷ Giới.
+* **Chủ đề Boss - Cựu Thần Già Cỗi (Fading Gods):**
+  * Các con Boss Đại Tội không phải là những quái vật điên cuồng vô nghĩa. Họ từng là những vị thần vĩ đại cai trị Quỷ Giới thời hoàng kim, nay đang dần già cỗi, suy tàn và bị lãng quên trong lâu đài đổ nát của riêng họ.
+  * Mỗi cuộc chiến với họ mang màu sắc u sầu, bi tráng. Kết liễu họ là giải thoát họ khỏi nỗi đau kéo dài hàng thiên niên kỷ của thời gian.
 
 ---
 
-## 4. Kế Hoạch Triển Khai Cho Mẫu Thử (Prototype Scope)
+## 3. Phân Nhánh 3 Kết Thúc (Multi-Endings)
 
-Để tránh bị vỡ scope (bể dự án), việc phát triển sẽ tập trung theo các giai đoạn:
-1. **Giai đoạn 1 (Hiện tại - Đã xong):** Hoàn thiện bộ điều khiển di chuyển mượt mà (Walk, Jump, Dash, Climb, 3-hit combo, QTE, và hệ thống Lighting/Shadows).
-2. **Giai đoạn 2 (Mục tiêu tiếp theo):**
-   * Lập trình biến số ẩn `sanity_points` hoạt động liên thông với máu và QTE.
-   * Xây dựng **1 màn chơi hoàn chỉnh đầu tiên** (Đại diện cho Đại tội Phẫn Nộ - Wrath) kèm 1 Boss Wrath có AI xả chiêu đầy đủ.
-   * Thiết kế menu hội thoại lựa chọn rẽ nhánh tại Safe Hub của Quỷ dục vọng.
+Mức độ tỉnh táo của nhân vật chính (`sanity_points`, từ 0 đến 100) sẽ quyết định kết cục của vương quốc **Lustgod**:
+
+### 🖤 Ending 1: "Đồ Chơi Của Quỷ" (Corrupted Ending - Bad)
+* **Chi tiết:** Cô thầy cúng hoàn toàn tha hóa dưới sự chi phối của dục vọng quỷ dữ. Cô trở thành nô lệ thể xác vĩnh viễn cho Quỷ Dục Vọng đồng minh, bị giam cầm nơi quỷ giới sâu thẳm.
+* **Điều kiện:** Điểm `sanity` cực thấp (<30%) do thất bại quá nhiều hoặc lạm dụng quá đà quỷ lực.
+
+### 😈 Ending 2: "Chúa Quỷ Tối Cao" (Sovereign Demon Ending - Dark)
+* **Chi tiết:** Phát hiện mưu đồ nuốt chửng bản thân của Quỷ Dục Vọng sau khi diệt xong 6 đại tội, cô thầy cúng quyết định "hóa quỷ" hoàn toàn. Cô quay sang tiêu diệt luôn Quỷ Dục Vọng, cướp đoạt ngai vàng và trở thành **Chúa Quỷ tối cao duy nhất** cai trị quỷ giới với quyền năng vô hạn.
+* **Điều kiện:** Điểm `sanity` ở mức khá, người chơi chọn rẽ nhánh chiến đấu với Quỷ Dục Vọng (Boss ẩn thứ 7).
+
+### 👼 True Ending: "Thánh Nữ U Buồn" (Tragic Saint Ending - Bittersweet)
+* **Chi tiết:** Giữ vững đức tin thanh khiết. Trước trận chiến cuối, cô hy sinh toàn bộ thần lực để cứu linh hồn người bạn. Linh hồn cậu được giải thoát, nhưng thể xác cậu đã qua đời trước đó. Cô được thần linh phong làm Thánh Nữ, rời khỏi quỷ giới và trở về thế gian để lặng lẽ viếng mộ người bạn thuở nhỏ trong u buồn bi tráng.
+* **Điều kiện:** `sanity` ở mức cao (>80%), hoàn thành chuỗi sự kiện chuộc tội ẩn và chọn hy sinh bản thân.
+
+---
+
+## 4. Cơ Chế New Game + (NG+): Pregnancy & Parasite
+
+Để giữ cho nhịp độ chơi lần đầu cực kỳ mượt mà, tốc độ cao (đúng chất Metroidvania), các yếu tố H-18 nặng đô như **Mang thai (Pregnancy)** và **Ký sinh (Parasite)** sẽ được kích hoạt riêng ở chế độ **New Game +**:
+
+### A. Cơ chế Ký Sinh (Parasite Mode)
+* **Cộng sinh quỷ dị:** Người chơi bị nhiễm một loại ký sinh trùng xúc tu quỷ.
+* **Gameplay thay đổi:** 
+  * Xúc tu ký sinh sẽ tự động phóng ra tấn công quái vật xung quanh trong lúc bạn combo cận chiến (tăng mạnh sát thương).
+  * **Cái giá phải trả:** Ký sinh trùng liên tục **rút máu (HP drain)** của bạn theo thời gian. Bạn bắt buộc phải duy trì combo chiến đấu liên tục để "cho nó ăn", nếu dừng lại quá lâu, nó sẽ nuốt chửng lượng máu còn lại của bạn.
+
+### B. Cơ chế Mang Thai (Pregnancy Mode)
+* **Gánh nặng vương quyền:** Thụ thai bởi quỷ năng sau khi thất bại hoặc chọn giao kèo đặc biệt.
+* **Gameplay thay đổi:**
+  * **Trọng lực vật lý nặng nề:** Tốc độ chạy của nhân vật giảm, khoảng cách Lướt (Dash) ngắn hơn, nhảy đầm tay hơn do cơ thể mang thai nặng nề (ảnh hưởng trực tiếp từ cơ chế vật lý platformer).
+  * **Bùng nổ quỷ pháp:** Lượng Mana tối đa tăng vọt, sát thương từ các phép thuật Shaman và quỷ lực tăng gấp đôi.
+  * **Giới hạn hòm đồ:** Phân thai quỷ chiếm dụng một phần không gian lưu trữ vật phẩm trong chiếc Balo Trọng Lực, đòi hỏi khả năng sắp xếp diện tích khéo léo hơn.
+
+---
+
+## 5. Lộ Trình Triển Khai Cho Mẫu Thử (Prototype Steps)
+
+1. **Giai đoạn 1 (Đã xong):** Core gameplay di chuyển (Walk, Jump, Dash, Climb, 3-hit combo, QTE, và hệ thống 2D Lighting mượt mà).
+2. **Giai đoạn 2 (Tiếp theo):**
+   * Lập trình biến số ẩn `sanity_points` liên thông với sát thương nhân vật và QTE/H-scene.
+   * Xây dựng màn chơi đầu tiên đại diện cho Cựu Thần Phẫn Nộ (Wrath) với không khí tàn tích rêu phong u sầu và 1 Boss Wrath có AI xả chiêu phản xạ di chuyển.
