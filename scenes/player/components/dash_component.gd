@@ -20,7 +20,7 @@ func can_dash() -> bool:
 	return dash_cooldown_timer <= 0.0
 
 func start_dash() -> void:
-	player.current_state = 3 # State.DASH
+	player.current_state = Player.State.DASH
 	dash_timer = 0.0
 	dash_cooldown_timer = dash_cooldown
 	
@@ -64,14 +64,14 @@ func process_dash(delta: float) -> void:
 			player.velocity.y += player.gravity * delta
 	else:
 		player.is_invincible = false
-		player.current_state = 0 # State.MOVE
+		player.current_state = Player.State.MOVE
 		
 	player.move_and_slide()
 
 func interrupt() -> void:
-	if player.current_state == 3: # State.DASH
+	if player.current_state == Player.State.DASH:
 		player.is_invincible = false
-		player.current_state = 0 # State.MOVE
+		player.current_state = Player.State.MOVE
 
 func reset() -> void:
 	dash_cooldown_timer = 0.0
