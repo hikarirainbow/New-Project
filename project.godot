@@ -27,6 +27,7 @@ window/stretch/aspect="keep"
 [autoload]
 
 InputManager="*res://scripts/input_manager.gd"
+RoomManager="*res://scripts/room_manager.gd"
 
 [input]
 

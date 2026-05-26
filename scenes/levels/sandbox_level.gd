@@ -51,13 +51,33 @@ func _build_map() -> void:
 	for c in range(COLS):
 		_place(c, ROWS - 1)
 
-	# Left wall (col 0, rows 1-18)
+	# Left wall (col 0, rows 1-18) with a 2-tile gap at rows 17-18 for portal
 	for r in range(1, ROWS - 1):
-		_place(0, r)
+		if r != 17 and r != 18:
+			_place(0, r)
 
-	# Right wall (col 59, rows 1-18)
+	# Right wall (col 59, rows 1-18) with a 2-tile gap at rows 17-18 for portal
 	for r in range(1, ROWS - 1):
-		_place(COLS - 1, r)
+		if r != 17 and r != 18:
+			_place(COLS - 1, r)
+
+	# Add Left Portal at the gap on column 0, Y=576
+	var left_portal = preload("res://scenes/levels/room_portal.gd").new()
+	left_portal.name = "LeftPortal"
+	left_portal.portal_id = "left"
+	left_portal.target_portal_id = "right"
+	left_portal.target_room_path = "res://scenes/levels/sandbox_level.tscn"
+	left_portal.position = Vector2(16, 576)
+	add_child(left_portal)
+
+	# Add Right Portal at the gap on column 59, Y=576
+	var right_portal = preload("res://scenes/levels/room_portal.gd").new()
+	right_portal.name = "RightPortal"
+	right_portal.portal_id = "right"
+	right_portal.target_portal_id = "left"
+	right_portal.target_room_path = "res://scenes/levels/sandbox_level.tscn"
+	right_portal.position = Vector2(1904, 576)
+	add_child(right_portal)
 
 	# Random platform layers at rows 16, 13, 10, 7
 	# (96 px spacing = 3 tiles — reachable with 103 px max jump)

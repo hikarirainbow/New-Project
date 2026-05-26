@@ -23,10 +23,18 @@ func setup_player(player):
 	update_label(player.current_health, player.max_health)
 	
 	# Kết nối tín hiệu thay đổi máu từ Player để cập nhật UI
+	if player.health_changed.is_connected(_on_player_health_changed):
+		player.health_changed.disconnect(_on_player_health_changed)
 	player.health_changed.connect(_on_player_health_changed)
+	
 	# Kết nối tín hiệu khi Player bị tiêu diệt
+	if player.player_defeated.is_connected(_on_player_defeated):
+		player.player_defeated.disconnect(_on_player_defeated)
 	player.player_defeated.connect(_on_player_defeated)
+	
 	# Kết nối tín hiệu khi Player nhặt chìa khóa
+	if player.key_collected.is_connected(_on_key_collected):
+		player.key_collected.disconnect(_on_key_collected)
 	player.key_collected.connect(_on_key_collected)
 
 # Xử lý sự kiện khi máu Player thay đổi (nhận sát thương hoặc hồi máu)
