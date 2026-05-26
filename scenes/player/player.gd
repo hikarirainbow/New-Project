@@ -24,11 +24,13 @@ var qte_target: float = 100.0
 var last_qte_key: String = ""
 var _force_triple_knockback: bool = false
 var qte_indicator: Node2D = null
+var _h_scene_active: bool = false
 
 # Custom signal emitted on player defeat
 signal player_defeated
 # Key pickup signal
 signal key_collected(key_name: String)
+signal h_scene_triggered(enemy_node: Node2D)
 
 # Collected keys storage
 var keys: Array[String] = []
@@ -39,6 +41,8 @@ var spawn_point: Vector2
 @onready var dash_component = $DashComponent
 @onready var climb_component = $ClimbComponent
 @onready var animation_component = $AnimationComponent
+@onready var corruption_component = $CorruptionComponent
+
 
 
 func _ready():
@@ -156,9 +160,22 @@ func handle_grabbed_state(delta):
 	
 	move_and_slide()
 	
-	# QTE progress decays linearly over time
-	qte_progress = max(0.0, qte_progress - delta * 15.0)
+	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier
+	var decay_multiplier = corruption_component.get_qte_decay_multiplier() if corruption_component else 2.0
+	qte_progress = max(0.0, qte_progress - delta * 15.0 * decay_multiplier)
 	
+	# Check for close-range (5px) enemy H-scene trigger
+	if not _h_scene_active:
+		var enemies = get_tree().get_nodes_in_group("enemies")
+		for enemy in enemies:
+			if is_instance_valid(enemy) and enemy.has_method("is_alive") and enemy.is_alive():
+				var dist = global_position.distance_to(enemy.global_position)
+				if dist <= 5.0:
+					_h_scene_active = true
+					emit_signal("h_scene_triggered", enemy)
+					print("H-Scene Triggered with enemy: ", enemy.name)
+					break
+
 	# Calculate target input key instruction for HUD arrows
 	var next_key = "any"
 	if last_qte_key == "left":
@@ -210,9 +227,11 @@ func start_qte():
 	current_state = State.GRABBED
 	qte_progress = 0.0
 	last_qte_key = ""
+	_h_scene_active = false
 	if qte_indicator:
 		qte_indicator.visible = true
 		qte_indicator.set_qte_state(0.0, qte_target, "any")
+
 
 # Override Actor.apply_knockback to support scaled 3x force during grabbed/QTE triggers
 func apply_knockback(source_position: Vector2, force: float = 250.0):
@@ -245,19 +264,24 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 	if current_state == State.DEFEATED or current_state == State.GRABBED or is_invincible:
 		return
 		
+	# Scale incoming damage by corruption-based defense multiplier
+	var final_amount = amount
+	if corruption_component:
+		final_amount = int(round(amount * corruption_component.get_defense_multiplier()))
+
 	# Interrupt active actions on hit
 	attack_component.interrupt()
 	dash_component.interrupt()
 	climb_component.interrupt()
 	
 	var is_below_half_hp = current_health < max_health * 0.5
-	var would_survive = (current_health - amount) > 0
+	var would_survive = (current_health - final_amount) > 0
 	var should_trigger_qte = is_below_half_hp and would_survive
 	
 	if should_trigger_qte:
 		_force_triple_knockback = true
 		
-	super(amount, source_position)
+	super(final_amount, source_position)
 	
 	if should_trigger_qte:
 		_force_triple_knockback = false

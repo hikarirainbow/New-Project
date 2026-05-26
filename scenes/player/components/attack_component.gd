@@ -99,7 +99,11 @@ func interrupt() -> void:
 func _on_attack_body_entered(body: Node2D) -> void:
 	if body.has_method("take_damage") and not bodies_hit_this_attack.has(body):
 		bodies_hit_this_attack.append(body)
-		body.take_damage(20, player.global_position)
+		var base_damage = 20
+		if player and player.has_node("CorruptionComponent"):
+			var corruption_node = player.get_node("CorruptionComponent")
+			base_damage = int(round(base_damage * corruption_node.get_attack_multiplier()))
+		body.take_damage(base_damage, player.global_position)
 
 func _draw() -> void:
 	if attack_timer > 0.0:

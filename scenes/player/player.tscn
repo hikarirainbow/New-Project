@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://c1c2o7i1jjmyx"]
+[gd_scene load_steps=28 format=3 uid="uid://c1c2o7i1jjmyx"]
 
 [ext_resource type="Script" path="res://scenes/player/player.gd" id="1_player_gd"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2_player_icon"]
@@ -7,6 +7,8 @@
 [ext_resource type="Script" path="res://scenes/player/components/light_component.gd" id="5_light_component_gd"]
 [ext_resource type="Script" path="res://scenes/player/components/climb_component.gd" id="6_climb_component_gd"]
 [ext_resource type="Script" path="res://scenes/player/components/animation_component.gd" id="7_animation_component_gd"]
+[ext_resource type="Script" path="res://scenes/player/components/corruption_component.gd" id="8_corruption_component_gd"]
+
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(28, 56)
@@ -125,4 +127,8 @@ libraries = {
 
 [node name="AnimationComponent" type="Node2D" parent="."]
 script = ExtResource("7_animation_component_gd")
+
+[node name="CorruptionComponent" type="Node2D" parent="."]
+script = ExtResource("8_corruption_component_gd")
+
 

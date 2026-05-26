@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://d1u7h8d3p4"]
+[gd_scene load_steps=7 format=3 uid="uid://d1u7h8d3p4"]
 
 [ext_resource type="Script" path="res://scenes/ui/hud.gd" id="1_hud_gd"]
 
@@ -26,6 +26,30 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sanity_bg"]
+bg_color = Color(0.0509804, 0.0509804, 0.0784314, 0.588235)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.0980392, 0.0980392, 0.0980392, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sanity_fill"]
+bg_color = Color(0.9, 0.8, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.0980392, 0.0980392, 0.0980392, 0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud_gd")
 
@@ -43,7 +67,7 @@ layout_mode = 0
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 320.0
-offset_bottom = 90.0
+offset_bottom = 140.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Control/MarginContainer"]
 layout_mode = 2
@@ -61,6 +85,21 @@ custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
+value = 100.0
+show_percentage = false
+
+[node name="SanityLabel" type="Label" parent="Control/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = "Sanity: 100 / 100"
+
+[node name="SanityBar" type="ProgressBar" parent="Control/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_sanity_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_sanity_fill")
 value = 100.0
 show_percentage = false
 

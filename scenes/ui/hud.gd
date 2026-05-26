@@ -2,6 +2,8 @@ extends CanvasLayer
 
 @onready var health_bar   = $Control/MarginContainer/VBoxContainer/HealthBar
 @onready var health_label = $Control/MarginContainer/VBoxContainer/HealthLabel
+@onready var sanity_bar   = $Control/MarginContainer/VBoxContainer/SanityBar
+@onready var sanity_label = $Control/MarginContainer/VBoxContainer/SanityLabel
 @onready var key_label    = $Control/MarginContainer/VBoxContainer/KeyLabel
 @onready var screen_fade  = $Control/ScreenFade
 
@@ -39,6 +41,16 @@ func setup_player(player):
 		player.key_collected.disconnect(_on_key_collected)
 	player.key_collected.connect(_on_key_collected)
 
+	# Thiết lập giá trị ban đầu và kết nối tín hiệu Sanity từ CorruptionComponent
+	if player.has_node("CorruptionComponent"):
+		var corruption_node = player.get_node("CorruptionComponent")
+		sanity_bar.max_value = 100.0
+		sanity_bar.value = corruption_node.sanity
+		_update_sanity_ui(corruption_node.sanity)
+		if corruption_node.sanity_changed.is_connected(_on_player_sanity_changed):
+			corruption_node.sanity_changed.disconnect(_on_player_sanity_changed)
+		corruption_node.sanity_changed.connect(_on_player_sanity_changed)
+
 # Xử lý sự kiện khi máu Player thay đổi (nhận sát thương hoặc hồi máu)
 func _on_player_health_changed(new_health):
 	var player = get_tree().get_first_node_in_group("player")
@@ -51,6 +63,23 @@ func _on_player_health_changed(new_health):
 # Cập nhật text hiển thị số lượng máu HP: X / Y
 func update_label(current, maximum):
 	health_label.text = "HP: %d / %d" % [current, maximum]
+
+# Xử lý sự kiện khi Sanity thay đổi
+func _on_player_sanity_changed(new_sanity):
+	var tween = create_tween()
+	tween.tween_property(sanity_bar, "value", new_sanity, 0.15).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_update_sanity_ui(new_sanity)
+
+# Cập nhật nhãn và thay đổi màu sắc chuyển màu (Sacred Gold -> Demonic Purple)
+func _update_sanity_ui(sanity_val: float):
+	sanity_label.text = "Sanity: %d / 100" % int(round(sanity_val))
+	var fill_stylebox = sanity_bar.get_theme_stylebox("fill").duplicate()
+	if fill_stylebox is StyleBoxFlat:
+		# Gold = Color(0.9, 0.8, 0.2)
+		# Purple = Color(0.5, 0.1, 0.8)
+		var color = Color(0.5, 0.1, 0.8).lerp(Color(0.9, 0.8, 0.2), sanity_val / 100.0)
+		fill_stylebox.bg_color = color
+	sanity_bar.add_theme_stylebox_override("fill", fill_stylebox)
 
 # Fade out the screen to black
 func fade_to_black(duration: float = 0.15) -> Tween:
