@@ -1,9 +1,14 @@
 extends Node
 
 var player_instance: Node2D = null
+var is_transitioning: bool = false
 
 # Function to transition to a new scene
 func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> void:
+	if is_transitioning:
+		return
+	is_transitioning = true
+	
 	var current_scene = get_tree().current_scene
 	var player = get_tree().get_first_node_in_group("player")
 	
@@ -28,29 +33,29 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 			new_player.remove_from_group("player")
 			new_player.queue_free()
 		
-		# Add our persistent player node
-		new_scene.add_child(player_instance)
-		player_instance.name = "Player"
-		
-		# Position the player near the target portal
+		# Find the target portal to position the player before adding them to the tree
 		var target_portal = null
 		for portal in get_tree().get_nodes_in_group("portals"):
 			if portal.portal_id == spawn_at_portal:
 				target_portal = portal
 				break
 		
+		var spawn_pos = Vector2(160, 576)
 		if target_portal:
-			player_instance.global_position = target_portal.global_position
+			spawn_pos = target_portal.global_position
 			# Offset player horizontally to prevent immediate loop triggering
 			if spawn_at_portal == "left":
-				player_instance.global_position.x += 48
+				spawn_pos.x += 48
 			elif spawn_at_portal == "right":
-				player_instance.global_position.x -= 48
-		else:
-			# Fallback positioning
-			player_instance.global_position = Vector2(160, 576)
-			
+				spawn_pos.x -= 48
+		
+		# Set player position BEFORE adding to the tree to avoid triggering portals
+		player_instance.position = spawn_pos
 		player_instance.velocity = Vector2.ZERO
+		
+		# Add our persistent player node
+		new_scene.add_child(player_instance)
+		player_instance.name = "Player"
 		
 		# Reset physics interpolation to prevent teleportation visual glitches
 		player_instance.reset_physics_interpolation()
@@ -74,3 +79,5 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 		var hud = new_scene.get_node_or_null("HUD")
 		if hud and hud.has_method("setup_player"):
 			hud.setup_player(player_instance)
+			
+	is_transitioning = false
