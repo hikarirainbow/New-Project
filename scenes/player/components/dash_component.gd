@@ -47,12 +47,11 @@ func process_dash(delta: float) -> void:
 	elif dash_timer < DASH_DURATION:
 		player.is_invincible = false
 		
-		# Khóa hướng di chuyển
+		# Lock horizontal input direction during recovery phase
 		var input_dir = Input.get_axis("move_left", "move_right")
 		var target_speed = 0.0
 		if sign(input_dir) == sign(dash_direction.x):
-			# Refers to SPEED constant on Player
-			target_speed = dash_direction.x * 200.0 # SPEED
+			target_speed = dash_direction.x * 200.0 # Match player SPEED constant
 			
 		var recovery_time_passed = dash_timer - DASH_ACTIVE_DURATION
 		var total_recovery_time = DASH_DURATION - DASH_ACTIVE_DURATION

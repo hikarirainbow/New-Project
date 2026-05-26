@@ -17,11 +17,11 @@ func _process(delta: float) -> void:
 	if not visible:
 		return
 		
-	# Giảm chấn rung lắc theo thời gian
+	# Dampen shaking effect over time
 	if shake_amount > 0.0:
 		shake_amount = move_toward(shake_amount, 0.0, delta * 30.0)
 		
-	# Gọi draw lại mỗi frame để đảm bảo animation mượt mà
+	# Force redraw every frame to update vectors dynamically
 	queue_redraw()
 
 func set_qte_state(prog: float, max_prog: float, next: String, shake: float = 0.0) -> void:
@@ -32,27 +32,27 @@ func set_qte_state(prog: float, max_prog: float, next: String, shake: float = 0.
 		shake_amount = shake
 
 func _draw() -> void:
-	# Áp dụng độ lệch rung lắc
+	# Calculate shake offset vector
 	var shake_offset = Vector2.ZERO
 	if shake_amount > 0.0:
 		shake_offset = Vector2(randf_range(-shake_amount, shake_amount), randf_range(-shake_amount, shake_amount))
 		
 	var time = Time.get_ticks_msec() * 0.008
 	
-	# Vẽ thanh tiến trình nền (Black flat bar)
+	# Draw background progress bar (flat black bar)
 	var bar_width = 50.0
 	var bar_height = 6.0
 	var bar_rect = Rect2(-bar_width * 0.5 + shake_offset.x, -bar_height * 0.5 + shake_offset.y, bar_width, bar_height)
-	draw_rect(bar_rect, Color(0.08, 0.05, 0.12, 0.85), true) # Nền tím tối mờ
-	draw_rect(bar_rect, Color(0.85, 0.15, 0.15), false, 1.0) # Viền đỏ cảnh báo
+	draw_rect(bar_rect, Color(0.08, 0.05, 0.12, 0.85), true) # Semi-translucent dark purple bg
+	draw_rect(bar_rect, Color(0.85, 0.15, 0.15), false, 1.0) # Red warning border
 	
-	# Vẽ thanh tiến trình nạp đầy (Red fill)
+	# Draw active progress fill (red fill)
 	if progress > 0.0:
 		var fill_width = (progress / max_progress) * bar_width
 		var fill_rect = Rect2(-bar_width * 0.5 + shake_offset.x, -bar_height * 0.5 + shake_offset.y, fill_width, bar_height)
 		draw_rect(fill_rect, Color(0.9, 0.2, 0.2), true)
 		
-	# Vẽ mũi tên Trái (Left Arrow) - vị trí X = -38
+	# Draw Left Arrow (Offset X = -38)
 	var left_arrow_center = Vector2(-38.0, 0.0) + shake_offset
 	var left_highlighted = (next_key == "left" or next_key == "any")
 	var left_color = Color(0.1, 0.6, 1.0) if left_highlighted else Color(0.15, 0.3, 0.5, 0.4)
@@ -60,7 +60,7 @@ func _draw() -> void:
 	
 	_draw_arrow(left_arrow_center, -1.0, left_scale, left_color)
 	
-	# Vẽ mũi tên Phải (Right Arrow) - vị trí X = 38
+	# Draw Right Arrow (Offset X = 38)
 	var right_arrow_center = Vector2(38.0, 0.0) + shake_offset
 	var right_highlighted = (next_key == "right" or next_key == "any")
 	var right_color = Color(0.1, 0.6, 1.0) if right_highlighted else Color(0.15, 0.3, 0.5, 0.4)
@@ -68,11 +68,11 @@ func _draw() -> void:
 	
 	_draw_arrow(right_arrow_center, 1.0, right_scale, right_color)
 
-# Hàm vẽ mũi tên phụ trợ
+# Helper function to draw vector arrows
 func _draw_arrow(center: Vector2, direction: float, scale_val: float, color: Color) -> void:
 	var points = PackedVector2Array()
 	if direction > 0:
-		# Mũi tên hướng sang phải
+		# Points for Right Facing Arrow
 		points.append(Vector2(6, 0))
 		points.append(Vector2(-1, -6))
 		points.append(Vector2(-1, -2.5))
@@ -81,7 +81,7 @@ func _draw_arrow(center: Vector2, direction: float, scale_val: float, color: Col
 		points.append(Vector2(-1, 2.5))
 		points.append(Vector2(-1, 6))
 	else:
-		# Mũi tên hướng sang trái
+		# Points for Left Facing Arrow
 		points.append(Vector2(-6, 0))
 		points.append(Vector2(1, -6))
 		points.append(Vector2(1, -2.5))
@@ -90,14 +90,14 @@ func _draw_arrow(center: Vector2, direction: float, scale_val: float, color: Col
 		points.append(Vector2(1, 2.5))
 		points.append(Vector2(1, 6))
 		
-	# Áp dụng tỉ lệ và vị trí
+	# Apply scale and translate coordinates to local space center
 	for i in range(points.size()):
 		points[i] = center + points[i] * scale_val
 		
-	# Vẽ khối đa giác mũi tên
+	# Draw main filled polygon
 	draw_polygon(points, [color])
 	
-	# Vẽ viền màu trắng để mũi tên nổi bật trên nền tối
+	# Draw sharp contrast outline to pop against dark backgrounds
 	var outline_color = Color(1, 1, 1, 0.9) if color.a > 0.5 else Color(0.6, 0.6, 0.6, 0.3)
 	var outline_points = PackedVector2Array(points)
 	outline_points.append(points[0])

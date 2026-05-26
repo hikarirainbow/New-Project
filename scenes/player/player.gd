@@ -1,42 +1,40 @@
 class_name Player
 extends Actor
 
-# Các thông số di chuyển cơ bản (phù hợp với game platformer 2D)
+# Basic movement parameters (configured for 2D platformers)
 const SPEED           = 200.0
 const JUMP_VELOCITY   = -450.0  # ~103px apex
 const ACCELERATION    = 1000.0
 
-# Trạng thái nhân vật (FSM)
+# Finite State Machine (FSM) definition
 enum State { MOVE, GRABBED, DEFEATED, DASH, CLIMB }
 var current_state = State.MOVE
 
-
-
-# Trạng thái suy yếu (Debuff) đặc thù của Player
+# Player-specific debuff status
 var is_debuffed = false
 
-# Cấu hình thời gian bất tử khi bị tấn công
+# Invincibility frame settings
 @export var damage_invincibility_duration: float = 0.5
 var invincibility_timer = 0.0
 var is_invincible = false
 
-# Biến trạng thái QTE (Quick Time Event)
+# Quick Time Event (QTE) tracking variables
 var qte_progress: float = 0.0
 var qte_target: float = 100.0
 var last_qte_key: String = ""
 var _force_triple_knockback: bool = false
 var qte_indicator: Node2D = null
 
-# Tín hiệu đặc thù phát đi khi người chơi chết
+# Custom signal emitted on player defeat
 signal player_defeated
-# Tín hiệu phát khi nhặt chìa khóa
+# Key pickup signal
 signal key_collected(key_name: String)
 
-# Kho lưu trữ chìa khóa
+# Collected keys storage
 var keys: Array[String] = []
 var spawn_point: Vector2
 
-# Caching component references
+# Cached child component references
 @onready var attack_component = $AttackComponent
 @onready var dash_component = $DashComponent
 @onready var climb_component = $ClimbComponent
@@ -45,22 +43,22 @@ func _ready():
 	add_to_group("player")
 	spawn_point = global_position
 	if has_node("Camera2D"): $Camera2D.zoom = Vector2(1.2, 1.2)
-	# Ẩn và khóa chuột vào màn hình khi bắt đầu chơi game
+	# Capture mouse mouse mode on game start
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	
-	# Khởi tạo và đính kèm QTEIndicator trên đầu nhân vật (cách 50px so với đỉnh sprite)
+	# Programmatically instantiate and anchor QTE indicator above head (50px offset from sprite top)
 	qte_indicator = Node2D.new()
 	qte_indicator.name = "QTEIndicator"
 	qte_indicator.set_script(load("res://scenes/player/qte_indicator.gd"))
 	qte_indicator.visible = false
-	qte_indicator.position = Vector2(0, -82) # Y = -32 (đỉnh sprite) - 50px = -82
+	qte_indicator.position = Vector2(0, -82) # Y = -32 (sprite top) - 50px = -82
 	add_child(qte_indicator)
 
 func _physics_process(delta):
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
 		
-	# Đếm ngược thời gian bất tử và nhấp nháy sprite
+	# Process invincibility timer and sprite flashing effect
 	if invincibility_timer > 0.0:
 		invincibility_timer -= delta
 		if has_node("Sprite2D"):
@@ -82,9 +80,9 @@ func _physics_process(delta):
 		State.CLIMB:
 			climb_component.process_climb(delta)
 
-# Logic trạng thái di chuyển tự do
+# Logic loop for free movement state
 func handle_move_state(delta):
-	# Nếu đang tấn công, khóa điều khiển/hướng và dừng lại trên mặt đất
+	# If attacking, lock control direction and brake horizontal movement on floor
 	if attack_component.is_attacking():
 		if is_on_floor():
 			velocity.x = 0.0
@@ -94,33 +92,33 @@ func handle_move_state(delta):
 		move_and_slide()
 		return
 
-	# Kích hoạt Tấn công khi nhấn phím X (nút 'attack') và không đang tấn công
+	# Trigger attack chain when attack action is input
 	if Input.is_action_just_pressed("attack") and attack_component.can_attack():
 		attack_component.start_attack()
 		return
 
-	# Kích hoạt Dash (lướt nhanh) khi nhấn Shift (nút 'dash') và hết thời gian hồi chiêu
+	# Trigger dash sequence when dash action is input and cooldown is zero
 	if Input.is_action_just_pressed("dash") and dash_component.can_dash():
 		dash_component.start_dash()
 		return
 
-	# Áp dụng trọng lực
+	# Apply gravity acceleration
 	if not is_on_floor():
-		# Nếu nhân vật đang rơi xuống, tăng trọng lực để rơi nhanh hơn (giúp nhảy có cảm giác nặng hơn)
+		# Fall gravity is scaled by 1.5x to create a heavier platforming feel
 		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
 		velocity.y += active_gravity * delta
 
-	# Variable jump height: nếu nhả phím jump sớm trong khi đang bay lên, giảm vận tốc đi lên mạnh để đạt min jump cực thấp (~5px)
+	# Variable jump height: release jump button early to scale upwards velocity by 0.1x (min jump ~5px)
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
 		velocity.y *= 0.1
 
-	# Nếu đang chịu lực giật lùi (knockback), khóa phím điều khiển và giảm tốc dần
+	# If locked in knockback state, damp horizontal velocity via friction and ignore inputs
 	if knockback_timer > 0.0:
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
 		move_and_slide()
 		return
 
-	# Nhảy hoặc kích hoạt leo tường nếu ở trên không
+	# Jump or trigger ledge climb sequence if airborne
 	if Input.is_action_just_pressed("jump"):
 		if is_on_floor():
 			velocity.y = JUMP_VELOCITY
@@ -130,36 +128,36 @@ func handle_move_state(delta):
 				climb_component.start_climb(ledge_data.target_position)
 				return
 
-	# Lấy hướng nhập từ bàn phím A/D hoặc Trái/Phải
+	# Query directional horizontal inputs
 	var direction = Input.get_axis("move_left", "move_right")
 	if direction != 0:
-		# Tăng tốc độ dần đều đến tốc độ tối đa
+		# Linearly interpolate horizontal velocity towards target max speed
 		velocity.x = move_toward(velocity.x, direction * SPEED, ACCELERATION * delta)
-		# Quay mặt Sprite nhân vật theo hướng đi
+		# Update sprite flip direction matching velocity sign
 		if has_node("Sprite2D"):
 			$Sprite2D.flip_h = direction < 0
 	else:
-		# Giảm tốc độ dần đều về 0 khi không nhấn phím di chuyển
+		# Linearly decelerate velocity to 0 when no direction is input
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
 
 	move_and_slide()
 
-# Logic khi bị khống chế (Grabbed)
+# Logic loop for grabbed state (QTE active)
 func handle_grabbed_state(delta):
-	# Áp dụng trọng lực
+	# Apply standard gravity in grabbed state
 	if not is_on_floor():
 		var active_gravity = gravity * 1.5 if velocity.y > 0 else gravity
 		velocity.y += active_gravity * delta
 
-	# Giảm tốc độ ngang dần khi knockback trôi qua
+	# Decay horizontal velocity via friction
 	velocity.x = move_toward(velocity.x, 0, friction * delta)
 	
 	move_and_slide()
 	
-	# Suy giảm tiến trình QTE theo thời gian (decay)
+	# QTE progress decays linearly over time
 	qte_progress = max(0.0, qte_progress - delta * 15.0)
 	
-	# Xác định phím kế tiếp cần spam để hướng dẫn người chơi
+	# Calculate target input key instruction for HUD arrows
 	var next_key = "any"
 	if last_qte_key == "left":
 		next_key = "right"
@@ -169,7 +167,7 @@ func handle_grabbed_state(delta):
 	if qte_indicator:
 		qte_indicator.set_qte_state(qte_progress, qte_target, next_key)
 		
-	# Kiểm tra nút nhấn spam di chuyển (A / D hoặc Mũi tên Trái / Phải)
+	# Check for alternation inputs (Left/Right inputs)
 	var left_pressed = Input.is_action_just_pressed("move_left")
 	var right_pressed = Input.is_action_just_pressed("move_right")
 	
@@ -194,18 +192,18 @@ func handle_grabbed_state(delta):
 			if qte_indicator:
 				qte_indicator.set_qte_state(qte_progress, qte_target, next_after_press, 8.0)
 				
-	# Nếu đã đủ tiến trình thoát khỏi khống chế
+	# Successful QTE exit
 	if qte_progress >= qte_target:
 		current_state = State.MOVE
 		if qte_indicator:
 			qte_indicator.visible = false
-		# Cho người chơi 0.5 giây bất tử để thoát đi an toàn
+		# Grant player 0.5s invincibility buffer upon escape
 		is_invincible = true
 		invincibility_timer = 0.5
 		if has_node("Sprite2D"):
 			$Sprite2D.modulate.a = 1.0
 
-# Bắt đầu trạng thái QTE
+# Initialize QTE sequence
 func start_qte():
 	current_state = State.GRABBED
 	qte_progress = 0.0
@@ -214,7 +212,7 @@ func start_qte():
 		qte_indicator.visible = true
 		qte_indicator.set_qte_state(0.0, qte_target, "any")
 
-# Ghi đè hàm apply_knockback từ Actor để hỗ trợ knockback QTE mạnh gấp 3 lần
+# Override Actor.apply_knockback to support scaled 3x force during grabbed/QTE triggers
 func apply_knockback(source_position: Vector2, force: float = 250.0):
 	var actual_force = force
 	var actual_upward = -180.0
@@ -222,8 +220,8 @@ func apply_knockback(source_position: Vector2, force: float = 250.0):
 	
 	if _force_triple_knockback:
 		actual_force = force * 3.0
-		actual_upward = -350.0  # Phóng bay mạnh hơn lên trên
-		actual_duration = 0.5   # Khóa phím điều khiển lâu hơn trong lúc bay
+		actual_upward = -350.0  # Launch player higher upward
+		actual_duration = 0.5   # Prolong input lock duration
 		
 	var direction = (global_position - source_position).normalized()
 	if abs(direction.x) < 0.1:
@@ -232,26 +230,22 @@ func apply_knockback(source_position: Vector2, force: float = 250.0):
 	velocity.y = actual_upward
 	knockback_timer = actual_duration
 
-
-
-# Logic khi bị đánh bại hoàn toàn (Defeated)
+# Defeated state logic loop
 func handle_defeated_state(delta):
-	# Nếu đang lơ lửng trên không thì rơi xuống đất
+	# Pull down to floor if airborne
 	if not is_on_floor():
 		velocity.y += gravity * delta
 	velocity.x = 0
 	move_and_slide()
 
-# Nhận sát thương và chịu đẩy lùi (Ghi đè lớp cha Actor để thêm miễn nhiễm)
+# Process incoming damage (overrides parent Actor method to add state verification)
 func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 	if current_state == State.DEFEATED or current_state == State.GRABBED or is_invincible:
 		return
 		
-	# Ngắt đòn đánh hoặc lướt khi trúng đòn
+	# Interrupt active actions on hit
 	attack_component.interrupt()
 	dash_component.interrupt()
-	
-	# Nếu bị đánh trúng khi đang leo tường, ngắt trạng thái leo
 	climb_component.interrupt()
 	
 	var is_below_half_hp = current_health < max_health * 0.5
@@ -267,32 +261,32 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO):
 		_force_triple_knockback = false
 		start_qte()
 	else:
-		# Kích hoạt trạng thái bất tử sau khi nhận sát thương nếu không bị QTE
+		# Apply invincibility buffer on standard hit survival
 		if current_health > 0:
 			is_invincible = true
 			invincibility_timer = damage_invincibility_duration
 
-# Đánh bại nhân vật
+# Defeat sequence
 func die():
 	current_state = State.DEFEATED
 	emit_signal("player_defeated")
 	print("Player has been defeated!")
 
-# Áp dụng hiệu ứng Debuff sau khi hồi sinh
+# Apply debuff status (respawn consequence)
 func apply_debuff():
 	is_debuffed = true
 	max_health = 80
 	current_health = min(current_health, max_health)
 	emit_signal("health_changed", current_health)
 
-# Xóa hiệu ứng Debuff (khi lưu game/hồi phục)
+# Clear debuff status (save room recovery)
 func remove_debuff():
 	is_debuffed = false
 	max_health = 100
 	current_health = max_health
 	emit_signal("health_changed", current_health)
 
-# Hồi sinh nhân vật về điểm spawn ban đầu
+# Respawn player at original spawn point coordinates
 func respawn():
 	global_position = spawn_point
 	velocity = Vector2.ZERO
@@ -306,15 +300,15 @@ func respawn():
 	current_state = State.MOVE
 	dash_component.reset()
 	
-	# Đảm bảo ẩn thanh QTE nếu có khi hồi sinh
+	# Hide above-head QTE indicators if active on death
 	if qte_indicator:
 		qte_indicator.visible = false
 
-# Nâng cấp kỹ năng lướt: Giảm một nửa thời gian hồi chiêu
+# Dash upgrade callback: reduces dash cooldown duration by half
 func upgrade_dash_cooldown():
 	dash_component.upgrade_cooldown()
 
-# Thu thập chìa khóa từ xác quái vật
+# Key collection callback
 func collect_key(key_name: String):
 	keys.append(key_name)
 	emit_signal("key_collected", key_name)

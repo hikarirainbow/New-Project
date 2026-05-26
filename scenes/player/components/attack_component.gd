@@ -21,7 +21,7 @@ func _ready() -> void:
 		attack_area.body_entered.connect(_on_attack_body_entered)
 		attack_area_collision = attack_area.get_node_or_null("CollisionShape2D")
 		
-		# Khởi tạo shape phụ cho combo đòn 2 dynamically
+		# Dynamically initialize secondary collision shape for 2nd hit combo variation
 		attack_shape_2 = CollisionShape2D.new()
 		var rect2 = RectangleShape2D.new()
 		attack_shape_2.shape = rect2
@@ -38,7 +38,7 @@ func _physics_process(delta: float) -> void:
 	if combo_reset_timer > 0.0 and attack_timer <= 0.0:
 		combo_reset_timer -= delta
 		if combo_reset_timer <= 0.0:
-			combo_index = 0 # Reset về đòn 1
+			combo_index = 0 # Reset to 1st attack in combo chain
 
 func is_attacking() -> bool:
 	return attack_timer > 0.0
