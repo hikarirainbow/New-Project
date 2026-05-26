@@ -100,6 +100,17 @@ func _interact(player: Node2D) -> void:
 		
 	player.spawn_point = global_position
 	
+	# Clear persisted corpses in RoomManager
+	if get_tree().root.has_node("RoomManager"):
+		var room_manager = get_tree().root.get_node("RoomManager")
+		if room_manager.has_method("clear_corpses"):
+			room_manager.clear_corpses()
+			
+	# Delete active corpse nodes in the current room
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(enemy) and enemy.has_method("is_alive") and not enemy.is_alive():
+			enemy.queue_free()
+	
 	# Activate checkpoint
 	if not activated:
 		activated = true

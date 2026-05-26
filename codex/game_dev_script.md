@@ -23,6 +23,7 @@ COMPONENTS (Component-based architecture to reduce player.gd complexity):
 - DashComponent (Node): Manages dash cooldowns, speed calculations, movement locks, and iframes.
 - LightComponent (Node2D): Configures and instantiates the PointLight2D radial flashlight.
 - ClimbComponent (Node2D): Manages dynamic point-free ledge detection, auto-correction check, L-shaped LERP animation, and scale squashing/stretching.
+- SkillComponent (Node2D): Manages player skill points, unlocks status, and enforces skill tree pre-requisite dependencies.
 
 
 ## Upgrade Item
@@ -91,3 +92,11 @@ PERSISTENCE_TRICK (RoomManager Autoload):
 - Refactored player.gd using a Component-based architecture, extracting AttackComponent, DashComponent, and LightComponent to decrease code complexity.
 - Modularized the Ledge Climb system by extracting all raycast checks, auto-correction, L-shaped LERP animation, and damage interrupts into a decoupled `ClimbComponent` node. Integrated it in `player.tscn`.
 - Cleaned up magic numbers/integers in components to use `Player.State` enum (e.g. `Player.State.CLIMB`, `Player.State.DASH`, `Player.State.MOVE`).
+- Implemented interactable Checkpoint shrines (`checkpoint.gd`) which refill health/sanity, save spawn point, and open the skill tree.
+- Decoupled skill tracking into a dedicated `SkillComponent` node, integrating 12 progression skills (A to L) affecting Combat, Agility, Corruption, and Sanity.
+- Programmed a dynamic, bottom-up Skill Tree tab inside the inventory, displaying A-L upgrade paths and drawing anti-aliased connection lines based on unlock states.
+- Implemented a "blackout overlay" that locks skill tree interaction unless resting at a checkpoint.
+- Re-routed ledge climbing to trigger automatically when holding horizontal direction keys against ledges, making climb activation guaranteed.
+- Refined player/enemy knockback vectors: removed Y bounce for standard hits, preserving vertical launches only for QTE and above-head slashes.
+- Implemented room-bound Corpse Persistence system in RoomManager and SandboxLevel to keep dead bodies (max 15/room) intact during room transitions.
+- Integrated checkpoint E-interact to automatically wipe room and memory corpses to prevent pileup and lag.

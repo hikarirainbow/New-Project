@@ -15,6 +15,7 @@ func _ready() -> void:
 	_setup_background()
 	_setup_darkness()
 	_build_map()
+	_restore_corpses()
 	_setup_camera_limits()
 
 func _physics_process(_delta: float) -> void:
@@ -95,6 +96,20 @@ func _spawn_checkpoint(col: int, row: int) -> void:
 	cp.name = "Checkpoint_" + str(col)
 	cp.position = Vector2(col * TILE + TILE * 0.5, row * TILE + TILE * 0.5)
 	add_child(cp)
+
+func _restore_corpses() -> void:
+	var room_manager = get_node_or_null("/root/RoomManager")
+	if not room_manager or not room_manager.has_method("save_room_state"):
+		return
+		
+	var path = scene_file_path
+	if room_manager.persisted_corpses.has(path):
+		var corpse_positions = room_manager.persisted_corpses[path]
+		for pos in corpse_positions:
+			var corpse = GrabEnemyScene.instantiate()
+			corpse.set_as_corpse()
+			corpse.position = pos
+			add_child(corpse)
 
 func _build_platform_row(row: int) -> void:
 	var target_platforms := rng.randi_range(4, 6)

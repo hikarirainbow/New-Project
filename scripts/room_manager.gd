@@ -2,6 +2,7 @@ extends Node
 
 var player_instance: Node2D = null
 var is_transitioning: bool = false
+var persisted_corpses: Dictionary = {}
 
 # Function to transition to a new scene
 func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> void:
@@ -9,8 +10,12 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 		return
 	is_transitioning = true
 	
-	# 1. Fade out the old scene's HUD
+	# Save state of current room before switching
 	var current_scene = get_tree().current_scene
+	if current_scene:
+		save_room_state(current_scene.scene_file_path, current_scene)
+	
+	# 1. Fade out the old scene's HUD
 	if current_scene:
 		var old_hud = current_scene.get_node_or_null("HUD")
 		if old_hud and old_hud.has_method("fade_to_black"):
@@ -88,3 +93,20 @@ func transition_to_room(room_scene_path: String, spawn_at_portal: String) -> voi
 			new_hud.fade_from_black(0.15)
 		
 	is_transitioning = false
+
+func save_room_state(room_path: String, room_node: Node) -> void:
+	var corpses = []
+	for enemy in room_node.get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(enemy) and not enemy.is_alive():
+			corpses.append(enemy.global_position)
+			
+	# Limit maximum saved corpses to 15 per room to prevent rendering/physics lag
+	if corpses.size() > 15:
+		corpses = corpses.slice(corpses.size() - 15)
+		
+	persisted_corpses[room_path] = corpses
+	print("[ROOM] Saved ", corpses.size(), " corpses for: ", room_path)
+
+func clear_corpses() -> void:
+	persisted_corpses.clear()
+	print("[ROOM] All persisted corpses cleared.")

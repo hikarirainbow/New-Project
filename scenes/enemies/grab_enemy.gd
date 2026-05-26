@@ -26,9 +26,19 @@ var player_ref: Node = null
 func _ready():
 	add_to_group("enemies")
 	
+	if current_state == State.DEAD:
+		collision_layer = 0
+		collision_mask = 1
+		if has_node("Sprite2D"):
+			$Sprite2D.modulate = Color(0.5, 0.5, 0.5, 1.0)
+		return
+		
 	# Cache player reference once
 	await get_tree().process_frame
 	player_ref = get_tree().get_first_node_in_group("player")
+
+func set_as_corpse() -> void:
+	current_state = State.DEAD
 
 func _update_shadow_shroud_material():
 	if has_node("Sprite2D") and $Sprite2D.material is ShaderMaterial:
