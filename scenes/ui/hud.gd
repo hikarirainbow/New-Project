@@ -89,5 +89,3 @@ func _on_key_collected(key_name: String):
 		key_label.text = "Keys: " + ", ".join(player.keys)
 	else:
 		key_label.text = "Keys: None"
-
-

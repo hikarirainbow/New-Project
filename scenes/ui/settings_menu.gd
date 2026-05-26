@@ -24,6 +24,9 @@ func _ready():
 func _input(event):
 	# Nhấn ESC để đóng/mở menu cài đặt
 	if Input.is_action_just_pressed("ui_cancel"):
+		var inventory = get_tree().current_scene.get_node_or_null("Inventory")
+		if inventory and inventory.is_open:
+			return
 		toggle_menu()
 		
 	# Nếu đang chờ nhập phím để thay đổi nút

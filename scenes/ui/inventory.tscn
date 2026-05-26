@@ -1,0 +1,114 @@
+[gd_scene load_steps=2 format=3 uid="uid://c5y7h8d3p9"]
+
+[ext_resource type="Script" path="res://scenes/ui/inventory.gd" id="1_inventory_gd"]
+
+[node name="Inventory" type="CanvasLayer"]
+process_mode = 3
+layer = 4
+script = ExtResource("1_inventory_gd")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="Control"]
+custom_minimum_size = Vector2(512, 288)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -256.0
+offset_top = -144.0
+offset_right = 256.0
+offset_bottom = 144.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TabHeader" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="MapButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/TabHeader"]
+layout_mode = 2
+text = "BẢN ĐỒ"
+flat = true
+
+[node name="ItemsButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer/TabHeader"]
+layout_mode = 2
+text = "TRANG BỊ & VẬT PHẨM"
+flat = true
+
+[node name="HSeparator" type="HSeparator" parent="Control/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ContentContainer" type="Control" parent="Control/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MapPage" type="Control" parent="Control/Panel/MarginContainer/VBoxContainer/ContentContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ContentContainer/MapPage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ContentContainer/MapPage/CenterContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 0.8)
+theme_override_font_sizes/font_size = 14
+text = "[ BẢN ĐỒ KHU VỰC - CHƯA SẴN SÀNG ]"
+
+[node name="ItemsPage" type="Control" parent="Control/Panel/MarginContainer/VBoxContainer/ContentContainer"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ContentContainer/ItemsPage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ContentContainer/ItemsPage/CenterContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 0.8)
+theme_override_font_sizes/font_size = 14
+text = "[ HÀNH TRANG & TRANG BỊ - CHƯA CÓ VẬT PHẨM ]"

@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://d1h7h8d3p3"]
+[gd_scene load_steps=8 format=3 uid="uid://d1h7h8d3p3"]
 
 [ext_resource type="Script" path="res://scenes/levels/sandbox_level.gd" id="0_level_gd"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player_tscn"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/items/dash_upgrade_item.tscn" id="4_dash_upgrade_item_tscn"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/grab_enemy.tscn" id="5_grab_enemy_tscn"]
 [ext_resource type="PackedScene" path="res://scenes/ui/settings_menu.tscn" id="6_settings_menu_tscn"]
+[ext_resource type="PackedScene" path="res://scenes/ui/inventory.tscn" id="7_inventory_tscn"]
 
 [node name="SandboxLevel" type="Node2D"]
 script = ExtResource("0_level_gd")
@@ -13,6 +14,8 @@ script = ExtResource("0_level_gd")
 [node name="HUD" parent="." instance=ExtResource("2_hud_tscn")]
 
 [node name="SettingsMenu" parent="." instance=ExtResource("6_settings_menu_tscn")]
+
+[node name="Inventory" parent="." instance=ExtResource("7_inventory_tscn")]
 
 [node name="Player" parent="." instance=ExtResource("1_player_tscn")]
 position = Vector2(160, 576)

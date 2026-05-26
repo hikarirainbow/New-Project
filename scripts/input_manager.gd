@@ -8,7 +8,8 @@ var default_controls = {
 	"move_right": KEY_D,
 	"jump": KEY_SPACE,
 	"dash": KEY_C,
-	"attack": KEY_X
+	"attack": KEY_X,
+	"inventory": KEY_ALT
 }
 
 var current_controls = {}
