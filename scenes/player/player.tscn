@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://c1c2o7i1jjmyx"]
+[gd_scene load_steps=27 format=3 uid="uid://c1c2o7i1jjmyx"]
 
 [ext_resource type="Script" path="res://scenes/player/player.gd" id="1_player_gd"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2_player_icon"]
@@ -6,12 +6,77 @@
 [ext_resource type="Script" path="res://scenes/player/components/dash_component.gd" id="4_dash_component_gd"]
 [ext_resource type="Script" path="res://scenes/player/components/light_component.gd" id="5_light_component_gd"]
 [ext_resource type="Script" path="res://scenes/player/components/climb_component.gd" id="6_climb_component_gd"]
+[ext_resource type="Script" path="res://scenes/player/components/animation_component.gd" id="7_animation_component_gd"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(28, 56)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
 size = Vector2(50, 10)
+
+[sub_resource type="Animation" id="Animation_idle"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_run"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_jump_rise"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_jump_fall"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_land"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_turn"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_dash"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_attack_1"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_attack_2"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_attack_3"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_climb_rise"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_climb_step"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_grabbed"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_hurt"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_defeated"]
+length = 0.1
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_player"]
+_data = {
+"attack_1": SubResource("Animation_attack_1"),
+"attack_2": SubResource("Animation_attack_2"),
+"attack_3": SubResource("Animation_attack_3"),
+"climb_rise": SubResource("Animation_climb_rise"),
+"climb_step": SubResource("Animation_climb_step"),
+"dash": SubResource("Animation_dash"),
+"defeated": SubResource("Animation_defeated"),
+"grabbed": SubResource("Animation_grabbed"),
+"hurt": SubResource("Animation_hurt"),
+"idle": SubResource("Animation_idle"),
+"jump_fall": SubResource("Animation_jump_fall"),
+"jump_rise": SubResource("Animation_jump_rise"),
+"land": SubResource("Animation_land"),
+"run": SubResource("Animation_run"),
+"turn": SubResource("Animation_turn")
+}
 
 [node name="Player" type="CharacterBody2D" unique_id=755196729]
 collision_layer = 2
@@ -52,3 +117,12 @@ script = ExtResource("5_light_component_gd")
 
 [node name="ClimbComponent" type="Node2D" parent="."]
 script = ExtResource("6_climb_component_gd")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_player")
+}
+
+[node name="AnimationComponent" type="Node2D" parent="."]
+script = ExtResource("7_animation_component_gd")
+

@@ -38,6 +38,8 @@ var spawn_point: Vector2
 @onready var attack_component = $AttackComponent
 @onready var dash_component = $DashComponent
 @onready var climb_component = $ClimbComponent
+@onready var animation_component = $AnimationComponent
+
 
 func _ready():
 	add_to_group("player")

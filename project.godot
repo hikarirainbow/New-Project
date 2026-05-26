@@ -15,6 +15,11 @@ run/main_scene="res://scenes/levels/sandbox_level.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+InputManager="*res://scripts/input_manager.gd"
+RoomManager="*res://scripts/room_manager.gd"
+
 [display]
 
 window/size/viewport_width=640
@@ -22,12 +27,6 @@ window/size/viewport_height=360
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
-
-[autoload]
-
-InputManager="*res://scripts/input_manager.gd"
-RoomManager="*res://scripts/room_manager.gd"
 
 [input]
 
