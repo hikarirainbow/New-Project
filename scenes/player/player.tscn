@@ -1,42 +1,20 @@
-[gd_scene load_steps=28 format=3 uid="uid://c1c2o7i1jjmyx"]
+[gd_scene format=3 uid="uid://c1c2o7i1jjmyx"]
 
-[ext_resource type="Script" path="res://scenes/player/player.gd" id="1_player_gd"]
-[ext_resource type="Texture2D" path="res://icon.svg" id="2_player_icon"]
-[ext_resource type="Script" path="res://scenes/player/components/attack_component.gd" id="3_attack_component_gd"]
-[ext_resource type="Script" path="res://scenes/player/components/dash_component.gd" id="4_dash_component_gd"]
-[ext_resource type="Script" path="res://scenes/player/components/light_component.gd" id="5_light_component_gd"]
-[ext_resource type="Script" path="res://scenes/player/components/climb_component.gd" id="6_climb_component_gd"]
-[ext_resource type="Script" path="res://scenes/player/components/animation_component.gd" id="7_animation_component_gd"]
-[ext_resource type="Script" path="res://scenes/player/components/corruption_component.gd" id="8_corruption_component_gd"]
-[ext_resource type="Script" path="res://scenes/player/components/skill_component.gd" id="9_skill_component_gd"]
-
+[ext_resource type="Script" uid="uid://c8wj401j1yimo" path="res://scenes/player/player.gd" id="1_player_gd"]
+[ext_resource type="Texture2D" uid="uid://4q335xxs2p" path="res://icon.svg" id="2_player_icon"]
+[ext_resource type="Script" uid="uid://bnbum5853p5eg" path="res://scenes/player/components/attack_component.gd" id="3_attack_component_gd"]
+[ext_resource type="Script" uid="uid://cfju8qinc347e" path="res://scenes/player/components/dash_component.gd" id="4_dash_component_gd"]
+[ext_resource type="Script" uid="uid://cj48wqy6r6b3y" path="res://scenes/player/components/light_component.gd" id="5_light_component_gd"]
+[ext_resource type="Script" uid="uid://peuh6dywnui4" path="res://scenes/player/components/climb_component.gd" id="6_climb_component_gd"]
+[ext_resource type="Script" uid="uid://cdstvdrs5dty6" path="res://scenes/player/components/animation_component.gd" id="7_animation_component_gd"]
+[ext_resource type="Script" uid="uid://bnlt4hysc8elc" path="res://scenes/player/components/corruption_component.gd" id="8_corruption_component_gd"]
+[ext_resource type="Script" uid="uid://dr3oe3obojeu0" path="res://scenes/player/components/skill_component.gd" id="9_skill_component_gd"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(28, 56)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
 size = Vector2(50, 10)
-
-[sub_resource type="Animation" id="Animation_idle"]
-length = 0.1
-
-[sub_resource type="Animation" id="Animation_run"]
-length = 0.1
-
-[sub_resource type="Animation" id="Animation_jump_rise"]
-length = 0.1
-
-[sub_resource type="Animation" id="Animation_jump_fall"]
-length = 0.1
-
-[sub_resource type="Animation" id="Animation_land"]
-length = 0.1
-
-[sub_resource type="Animation" id="Animation_turn"]
-length = 0.1
-
-[sub_resource type="Animation" id="Animation_dash"]
-length = 0.1
 
 [sub_resource type="Animation" id="Animation_attack_1"]
 length = 0.1
@@ -53,37 +31,57 @@ length = 0.1
 [sub_resource type="Animation" id="Animation_climb_step"]
 length = 0.1
 
+[sub_resource type="Animation" id="Animation_dash"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_defeated"]
+length = 0.1
+
 [sub_resource type="Animation" id="Animation_grabbed"]
 length = 0.1
 
 [sub_resource type="Animation" id="Animation_hurt"]
 length = 0.1
 
-[sub_resource type="Animation" id="Animation_defeated"]
+[sub_resource type="Animation" id="Animation_idle"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_jump_fall"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_jump_rise"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_land"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_run"]
+length = 0.1
+
+[sub_resource type="Animation" id="Animation_turn"]
 length = 0.1
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_player"]
 _data = {
-"attack_1": SubResource("Animation_attack_1"),
-"attack_2": SubResource("Animation_attack_2"),
-"attack_3": SubResource("Animation_attack_3"),
-"climb_rise": SubResource("Animation_climb_rise"),
-"climb_step": SubResource("Animation_climb_step"),
-"dash": SubResource("Animation_dash"),
-"defeated": SubResource("Animation_defeated"),
-"grabbed": SubResource("Animation_grabbed"),
-"hurt": SubResource("Animation_hurt"),
-"idle": SubResource("Animation_idle"),
-"jump_fall": SubResource("Animation_jump_fall"),
-"jump_rise": SubResource("Animation_jump_rise"),
-"land": SubResource("Animation_land"),
-"run": SubResource("Animation_run"),
-"turn": SubResource("Animation_turn")
+&"attack_1": SubResource("Animation_attack_1"),
+&"attack_2": SubResource("Animation_attack_2"),
+&"attack_3": SubResource("Animation_attack_3"),
+&"climb_rise": SubResource("Animation_climb_rise"),
+&"climb_step": SubResource("Animation_climb_step"),
+&"dash": SubResource("Animation_dash"),
+&"defeated": SubResource("Animation_defeated"),
+&"grabbed": SubResource("Animation_grabbed"),
+&"hurt": SubResource("Animation_hurt"),
+&"idle": SubResource("Animation_idle"),
+&"jump_fall": SubResource("Animation_jump_fall"),
+&"jump_rise": SubResource("Animation_jump_rise"),
+&"land": SubResource("Animation_land"),
+&"run": SubResource("Animation_run"),
+&"turn": SubResource("Animation_turn")
 }
 
 [node name="Player" type="CharacterBody2D" unique_id=755196729]
 collision_layer = 2
-collision_mask = 1
 script = ExtResource("1_player_gd")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=856507457]
@@ -95,7 +93,7 @@ position = Vector2(0, 4)
 shape = SubResource("RectangleShape2D_player")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=175367551]
-zoom = Vector2(1.5, 1.5)
+offset = Vector2(5, 5)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 
@@ -109,30 +107,26 @@ position = Vector2(45, 0)
 shape = SubResource("RectangleShape2D_attack")
 disabled = true
 
-[node name="AttackComponent" type="Node2D" parent="."]
+[node name="AttackComponent" type="Node2D" parent="." unique_id=604077988]
 script = ExtResource("3_attack_component_gd")
 
-[node name="DashComponent" type="Node" parent="."]
+[node name="DashComponent" type="Node" parent="." unique_id=1491419929]
 script = ExtResource("4_dash_component_gd")
 
-[node name="LightComponent" type="Node2D" parent="."]
+[node name="LightComponent" type="Node2D" parent="." unique_id=230716293]
 script = ExtResource("5_light_component_gd")
 
-[node name="ClimbComponent" type="Node2D" parent="."]
+[node name="ClimbComponent" type="Node2D" parent="." unique_id=528213334]
 script = ExtResource("6_climb_component_gd")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-libraries = {
-"": SubResource("AnimationLibrary_player")
-}
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=84865623]
+libraries/ = SubResource("AnimationLibrary_player")
 
-[node name="AnimationComponent" type="Node2D" parent="."]
+[node name="AnimationComponent" type="Node2D" parent="." unique_id=371032432]
 script = ExtResource("7_animation_component_gd")
 
-[node name="CorruptionComponent" type="Node2D" parent="."]
+[node name="CorruptionComponent" type="Node2D" parent="." unique_id=1860882647]
 script = ExtResource("8_corruption_component_gd")
 
-[node name="SkillComponent" type="Node2D" parent="."]
+[node name="SkillComponent" type="Node2D" parent="." unique_id=2096865523]
 script = ExtResource("9_skill_component_gd")
-
-

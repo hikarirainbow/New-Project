@@ -9,7 +9,9 @@ var default_controls: Dictionary = {
 	"jump": KEY_SPACE,
 	"dash": KEY_C,
 	"attack": KEY_X,
-	"inventory": KEY_ALT
+	"inventory": KEY_ALT,
+	"look_up": KEY_W,
+	"look_down": KEY_S
 }
 
 var current_controls: Dictionary = {}
@@ -72,6 +74,16 @@ func apply_controls() -> void:
 		var event := InputEventKey.new()
 		event.physical_keycode = keycode
 		InputMap.action_add_event(action, event)
+		
+		# Thêm phím mũi tên phụ cho look_up và look_down
+		if action == "look_up":
+			var arrow_event := InputEventKey.new()
+			arrow_event.physical_keycode = KEY_UP
+			InputMap.action_add_event(action, arrow_event)
+		elif action == "look_down":
+			var arrow_event := InputEventKey.new()
+			arrow_event.physical_keycode = KEY_DOWN
+			InputMap.action_add_event(action, arrow_event)
 
 # Thay đổi phím bấm cho một hành động
 func remap_action(action_name: String, new_keycode: int) -> void:
