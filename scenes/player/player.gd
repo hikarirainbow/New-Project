@@ -22,7 +22,9 @@ var is_debuffed = false
 
 @export_group("Struggling & QTE")
 @export var qte_indicator_offset: Vector2 = Vector2(0, -82)
-@export var default_camera_zoom: Vector2 = Vector2(1.2, 1.2)
+@export var default_camera_zoom: Vector2 = Vector2(2.4, 2.4)
+@export var camera_look_pan_distance: float = 200.0
+@export var camera_look_pan_speed: float = 5.0
 @export var fall_gravity_multiplier: float = 1.5
 @export var jump_cut_multiplier: float = 0.1
 @export var qte_decay_rate: float = 22.5
@@ -115,6 +117,8 @@ func _physics_process(delta: float) -> void:
 			dash_component.process_dash(delta)
 		State.CLIMB:
 			climb_component.process_climb(delta)
+			
+	_update_camera_look(delta)
 
 # Logic loop for free movement state
 func handle_move_state(delta: float) -> void:
@@ -410,9 +414,25 @@ func trigger_hit_stop(duration: float = 0.08, time_scale: float = 0.05) -> void:
 func shake_camera(direction_x: float, intensity: float = 8.0, duration: float = 0.15) -> void:
 	var camera = get_node_or_null("Camera2D")
 	if camera:
-		camera.offset = Vector2(-direction_x * intensity, 0.0)
+		camera.offset.x = -direction_x * intensity
 		var tween = create_tween().set_ignore_time_scale(true)
-		tween.tween_property(camera, "offset", Vector2.ZERO, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(camera, "offset:x", 0.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+# Update camera look offset based on player input (look_up / look_down)
+func _update_camera_look(delta: float) -> void:
+	var camera = get_node_or_null("Camera2D")
+	if not camera:
+		return
+		
+	var target_offset_y = 0.0
+	if current_state == State.MOVE:
+		if not attack_component.is_attacking():
+			if Input.is_action_pressed("look_up"):
+				target_offset_y -= camera_look_pan_distance
+			if Input.is_action_pressed("look_down"):
+				target_offset_y += camera_look_pan_distance
+				
+	camera.offset.y = lerp(camera.offset.y, target_offset_y, camera_look_pan_speed * delta)
 
 # Apply recoil pushback on melee hit
 func apply_melee_recoil(direction_x: float, force: float = 160.0) -> void:
