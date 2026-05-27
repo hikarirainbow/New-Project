@@ -29,6 +29,10 @@ func _physics_process(delta: float) -> void:
 func cast_skill() -> void:
 	cooldown_timer = cooldown_duration
 	
+	# Deduct 20 sanity points on cast
+	if player.corruption_component:
+		player.corruption_component.subtract_sanity(20.0)
+	
 	# Trigger vector drawing animation
 	cone_alpha = 0.4
 	var tween = player.create_tween().set_ignore_time_scale(true)
