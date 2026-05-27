@@ -83,6 +83,14 @@ func add_sanity(amount: float) -> void:
 func purify(amount: float) -> void:
 	add_sanity(amount)
 
+# Reduce max sanity capacity (down to a minimum of 50.0)
+func reduce_max_sanity(amount: float) -> void:
+	max_sanity = max(50.0, max_sanity - amount)
+	sanity = min(max_sanity, sanity)
+	corruption = max_sanity - sanity
+	sanity_changed.emit(sanity)
+	print("[CORRUPTION] Max Sanity reduced to: ", max_sanity)
+
 # Public combat multipliers:
 func get_attack_multiplier() -> float:
 	var bonus := base_attack_bonus_multiplier

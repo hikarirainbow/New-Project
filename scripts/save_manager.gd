@@ -87,6 +87,7 @@ func save_game(slot: int) -> void:
 	# Corruption / sanity
 	if player.corruption_component:
 		data["sanity"] = player.corruption_component.sanity
+		data["max_sanity"] = player.corruption_component.max_sanity
 
 	# Health
 	data["current_health"] = player.current_health
@@ -185,6 +186,7 @@ func start_new_game(slot: int) -> void:
 			"J": false, "K": false, "L": false
 		},
 		"sanity": 100.0,
+		"max_sanity": 100.0,
 		"current_health": 100,
 		"max_health": 100,
 		"is_debuffed": false,
@@ -261,9 +263,12 @@ func apply_save_to_player(player: Node) -> void:
 
 	# Sanity / Corruption
 	if player.corruption_component:
+		var max_sanity_val = data.get("max_sanity", 100.0)
+		player.corruption_component.max_sanity = max_sanity_val
+		
 		var sanity_val = data.get("sanity", 100.0)
 		player.corruption_component.sanity = sanity_val
-		player.corruption_component.corruption = 100.0 - sanity_val
+		player.corruption_component.corruption = max_sanity_val - sanity_val
 		player.corruption_component.sanity_changed.emit(sanity_val)
 
 	# Health & debuff

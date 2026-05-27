@@ -55,12 +55,14 @@ var _force_triple_knockback: bool = false
 var qte_indicator: Node2D = null
 var _h_scene_active: bool = false
 var qte_attacker: Node2D = null
+var h_scene_timer: float = 0.0
 
 # Custom signal emitted on player defeat
 signal player_defeated
 # Key pickup signal
 signal key_collected(key_name: String)
 signal h_scene_triggered(enemy_node: Node2D)
+signal h_scene_tick(new_max_sanity: float)
 
 # Collected keys storage
 var keys: Array[String] = []
@@ -217,6 +219,13 @@ func handle_grabbed_state(delta: float) -> void:
 	var decay_multiplier = corruption_component.get_qte_decay_multiplier() if corruption_component else 2.0
 	qte_progress = max(0.0, qte_progress - delta * qte_decay_rate * decay_multiplier)
 	
+	# H-Scene processing
+	if _h_scene_active:
+		h_scene_timer += delta
+		if h_scene_timer >= 5.0:
+			h_scene_timer -= 5.0
+			_on_h_scene_tick()
+	
 	# Check for close-range enemy H-scene trigger
 	if not _h_scene_active:
 		var enemies = get_tree().get_nodes_in_group("enemies")
@@ -241,6 +250,7 @@ func handle_grabbed_state(delta: float) -> void:
 						
 		if target_enemy:
 			_h_scene_active = true
+			h_scene_timer = 0.0
 			h_scene_triggered.emit(target_enemy)
 			if has_node("Sprite2D"):
 				$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red for H-scene trigger
@@ -288,6 +298,7 @@ func handle_grabbed_state(delta: float) -> void:
 	if qte_progress >= qte_target:
 		current_state = State.MOVE
 		qte_attacker = null
+		h_scene_timer = 0.0
 		if qte_indicator:
 			qte_indicator.visible = false
 		# Grant player invincibility buffer upon escape
@@ -302,6 +313,7 @@ func start_qte() -> void:
 	qte_progress = 0.0
 	last_qte_key = ""
 	_h_scene_active = false
+	h_scene_timer = 0.0
 	if has_node("Sprite2D"):
 		$Sprite2D.modulate = Color(1.0, 1.0, 0.0, 1.0) # Modulate yellow for testing visual state identification
 	if qte_indicator:
@@ -431,6 +443,17 @@ func remove_debuff() -> void:
 	max_health = standard_max_health
 	current_health = max_health
 	health_changed.emit(current_health)
+	
+	# Restore max sanity to normal (100) on soul shard/checkpoint recovery
+	if corruption_component:
+		corruption_component.max_sanity = 100.0
+		corruption_component.add_sanity(0.0) # Refresh sanity HUD/modulate
+
+func _on_h_scene_tick() -> void:
+	if corruption_component:
+		corruption_component.reduce_max_sanity(5.0)
+		h_scene_tick.emit(corruption_component.max_sanity)
+		print("[H-SCENE TICK] Lost 5 max sanity. Current max sanity: ", corruption_component.max_sanity)
 
 # Respawn player at original spawn point coordinates
 func respawn() -> void:

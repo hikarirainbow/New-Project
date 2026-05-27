@@ -7,6 +7,8 @@ extends CanvasLayer
 @onready var key_label    = $Control/MarginContainer/VBoxContainer/KeyLabel
 @onready var screen_fade  = $Control/ScreenFade
 
+var _corruption_node = null
+
 func _ready():
 	add_to_group("hud")
 	
@@ -43,13 +45,13 @@ func setup_player(player):
 
 	# Thiết lập giá trị ban đầu và kết nối tín hiệu Sanity từ CorruptionComponent
 	if player.has_node("CorruptionComponent"):
-		var corruption_node = player.get_node("CorruptionComponent")
+		_corruption_node = player.get_node("CorruptionComponent")
 		sanity_bar.max_value = 100.0
-		sanity_bar.value = corruption_node.sanity
-		_update_sanity_ui(corruption_node.sanity)
-		if corruption_node.sanity_changed.is_connected(_on_player_sanity_changed):
-			corruption_node.sanity_changed.disconnect(_on_player_sanity_changed)
-		corruption_node.sanity_changed.connect(_on_player_sanity_changed)
+		sanity_bar.value = _corruption_node.sanity
+		_update_sanity_ui(_corruption_node.sanity)
+		if _corruption_node.sanity_changed.is_connected(_on_player_sanity_changed):
+			_corruption_node.sanity_changed.disconnect(_on_player_sanity_changed)
+		_corruption_node.sanity_changed.connect(_on_player_sanity_changed)
 
 # Xử lý sự kiện khi máu Player thay đổi (nhận sát thương hoặc hồi máu)
 func _on_player_health_changed(new_health):
@@ -72,7 +74,10 @@ func _on_player_sanity_changed(new_sanity):
 
 # Cập nhật nhãn và thay đổi màu sắc chuyển màu (Sacred Gold -> Demonic Purple)
 func _update_sanity_ui(sanity_val: float):
-	sanity_label.text = "Sanity: %d / 100" % int(round(sanity_val))
+	var max_sanity_val = 100.0
+	if _corruption_node:
+		max_sanity_val = _corruption_node.max_sanity
+	sanity_label.text = "Sanity: %d / %d" % [int(round(sanity_val)), int(round(max_sanity_val))]
 	var fill_stylebox = sanity_bar.get_theme_stylebox("fill").duplicate()
 	if fill_stylebox is StyleBoxFlat:
 		# Gold = Color(0.9, 0.8, 0.2)
