@@ -93,16 +93,12 @@ func reduce_max_sanity(amount: float) -> void:
 
 # Public combat multipliers:
 func get_attack_multiplier() -> float:
-	var bonus := base_attack_bonus_multiplier
-	if player.skill_component and player.skill_component.is_skill_unlocked("G"):
-		bonus = skill_g_attack_bonus_multiplier
-	return 1.0 + (corruption / max_sanity) * bonus
+	var steps := (100.0 - max_sanity) / 5.0
+	return 1.0 + steps * 0.25
 
 func get_defense_multiplier() -> float:
-	var penalty := base_defense_penalty_multiplier
-	if player.skill_component and player.skill_component.is_skill_unlocked("L"):
-		penalty = skill_l_defense_penalty_multiplier
-	return 1.0 + (corruption / max_sanity) * penalty
+	var steps := (100.0 - max_sanity) / 5.0
+	return 1.0 + steps * 0.25
 
 func get_qte_decay_multiplier() -> float:
 	return base_qte_decay_multiplier + (corruption / max_sanity) * qte_decay_scaling_factor
