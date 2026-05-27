@@ -251,13 +251,13 @@ func _attracted(delta: float) -> void:
 	_apply_contact_damage()
 
 # Override take_damage to support double damage and bypass knockback when attracted
-func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO) -> void:
+func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO, attacker: Node2D = null) -> void:
 	if current_state == State.DEAD:
 		return
 		
 	var final_amount = amount
 	if current_state == State.ATTRACTED:
 		final_amount = amount * 2
-		super(final_amount, Vector2.ZERO)
+		super(final_amount, Vector2.ZERO, attacker)
 	else:
-		super(final_amount, source_position)
+		super(final_amount, source_position, attacker)
