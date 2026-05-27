@@ -54,6 +54,7 @@ var last_qte_key: String = ""
 var _force_triple_knockback: bool = false
 var qte_indicator: Node2D = null
 var _h_scene_active: bool = false
+var qte_attacker: Node2D = null
 
 # Custom signal emitted on player defeat
 signal player_defeated
@@ -219,17 +220,31 @@ func handle_grabbed_state(delta: float) -> void:
 	# Check for close-range enemy H-scene trigger
 	if not _h_scene_active:
 		var enemies = get_tree().get_nodes_in_group("enemies")
-		for enemy in enemies:
-			if is_instance_valid(enemy) and enemy.has_method("is_alive") and enemy.is_alive():
-				var dx = abs(global_position.x - enemy.global_position.x)
-				var dy = abs(global_position.y - enemy.global_position.y)
-				if dx <= qte_trigger_range_x and dy <= qte_trigger_range_y:
-					_h_scene_active = true
-					h_scene_triggered.emit(enemy)
-					if has_node("Sprite2D"):
-						$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red for H-scene trigger
-					print("H-Scene Triggered with enemy: ", enemy.name)
-					break
+		var target_enemy: Node2D = null
+		
+		# 1. First check if the prioritized QTE attacker is within range
+		if is_instance_valid(qte_attacker) and qte_attacker.has_method("is_alive") and qte_attacker.is_alive():
+			var dx = abs(global_position.x - qte_attacker.global_position.x)
+			var dy = abs(global_position.y - qte_attacker.global_position.y)
+			if dx <= qte_trigger_range_x and dy <= qte_trigger_range_y:
+				target_enemy = qte_attacker
+				
+		# 2. If not, fallback to other close-range enemies
+		if not target_enemy:
+			for enemy in enemies:
+				if is_instance_valid(enemy) and enemy.has_method("is_alive") and enemy.is_alive():
+					var dx = abs(global_position.x - enemy.global_position.x)
+					var dy = abs(global_position.y - enemy.global_position.y)
+					if dx <= qte_trigger_range_x and dy <= qte_trigger_range_y:
+						target_enemy = enemy
+						break
+						
+		if target_enemy:
+			_h_scene_active = true
+			h_scene_triggered.emit(target_enemy)
+			if has_node("Sprite2D"):
+				$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red for H-scene trigger
+			print("H-Scene Triggered with prioritized enemy: ", target_enemy.name)
 
 	# Calculate target input key instruction for HUD arrows
 	var next_key := "any"
@@ -272,6 +287,7 @@ func handle_grabbed_state(delta: float) -> void:
 	# Successful QTE exit
 	if qte_progress >= qte_target:
 		current_state = State.MOVE
+		qte_attacker = null
 		if qte_indicator:
 			qte_indicator.visible = false
 		# Grant player invincibility buffer upon escape
@@ -291,6 +307,23 @@ func start_qte() -> void:
 	if qte_indicator:
 		qte_indicator.visible = true
 		qte_indicator.set_qte_state(0.0, qte_target, "any")
+		
+	# Attract the QTE attacker at full speed (no speed reduction, longer duration)
+	if is_instance_valid(qte_attacker) and qte_attacker.has_method("is_alive") and qte_attacker.is_alive():
+		var existing = qte_attacker.get_node_or_null("AttractEffectComponent")
+		if existing:
+			existing.speed_multiplier = 1.0
+			existing.duration = 8.0
+			existing.refresh()
+		else:
+			var effect_script = load("res://scenes/enemies/components/attract_effect_component.gd")
+			var effect = Node.new()
+			effect.name = "AttractEffectComponent"
+			effect.set_script(effect_script)
+			effect.set("speed_multiplier", 1.0)
+			effect.set("duration", 8.0)
+			qte_attacker.add_child(effect)
+		print("[QTE] Attracted attacker: ", qte_attacker.name, " at full speed.")
 
 # Override Actor.apply_knockback to support scaled 3x force during grabbed/QTE triggers
 func apply_knockback(source_position: Vector2, force: float = 250.0) -> void:
@@ -317,7 +350,7 @@ func handle_defeated_state(delta: float) -> void:
 	move_and_slide()
 
 # Process incoming damage (overrides parent Actor method to add state verification)
-func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO) -> void:
+func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO, attacker: Node2D = null) -> void:
 	if current_state == State.DEFEATED or current_state == State.GRABBED or is_invincible:
 		return
 		
@@ -339,8 +372,9 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO) -> void:
 	
 	if should_trigger_qte:
 		_force_triple_knockback = true
+		qte_attacker = attacker
 		
-	super(final_amount, source_position)
+	super(final_amount, source_position, attacker)
 	
 	# Apply Skill I: Hurt Reflection (reflect 30% of final_amount back to nearby enemies)
 	if skill_component and skill_component.is_skill_unlocked("I"):
@@ -405,6 +439,7 @@ func respawn() -> void:
 	knockback_timer = 0.0
 	invincibility_timer = 0.0
 	is_invincible = false
+	qte_attacker = null
 	if has_node("Sprite2D"):
 		$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	current_health += 9999

@@ -173,7 +173,7 @@ func _apply_contact_damage() -> void:
 	for body in contact_area.get_overlapping_bodies():
 		if body.is_in_group("player") and body.has_method("take_damage"):
 			if body.current_state != body.State.DEFEATED:
-				body.take_damage(contact_damage, global_position)
+				body.take_damage(contact_damage, global_position, self)
 
 # ── DEATH (override Actor.die) ───────────────────────────────────────────────
 func die() -> void:
@@ -241,7 +241,12 @@ func _attracted(delta: float) -> void:
 	if has_node("Sprite2D"):
 		$Sprite2D.flip_h = direction < 0
 
-	velocity.x = direction * (chase_speed * 0.5)
+	var speed_mult := 0.5
+	var effect = get_node_or_null("AttractEffectComponent")
+	if effect and "speed_multiplier" in effect:
+		speed_mult = effect.speed_multiplier
+
+	velocity.x = direction * (chase_speed * speed_mult)
 	move_and_slide()
 	_apply_contact_damage()
 

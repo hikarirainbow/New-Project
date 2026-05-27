@@ -2,6 +2,7 @@ class_name AttractEffectComponent
 extends Node
 
 @export var duration: float = 5.0
+@export var speed_multiplier: float = 0.5
 
 var timer: float = 0.0
 var original_modulate: Color = Color.WHITE

@@ -24,7 +24,7 @@ signal health_changed(new_health: int)
 signal actor_died
 
 # Standard damage logic
-func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO) -> void:
+func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO, attacker: Node2D = null) -> void:
 	if current_health <= 0:
 		return
 		

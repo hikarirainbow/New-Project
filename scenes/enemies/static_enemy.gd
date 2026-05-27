@@ -39,7 +39,7 @@ func _on_body_entered(body):
 	if body.is_in_group("player"):
 		if body.has_method("take_damage"):
 			# Gây sát thương và truyền vị trí của kẻ địch để Player tính toán hướng đẩy lùi (Knockback)
-			body.take_damage(damage, global_position)
+			body.take_damage(damage, global_position, self)
 
 # Nhận sát thương khi bị Player tấn công
 func take_damage(amount: int):
