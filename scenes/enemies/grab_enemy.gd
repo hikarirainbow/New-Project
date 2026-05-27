@@ -26,6 +26,19 @@ var player_ref: Player = null
 var contact_area: Area2D = null
 var is_being_raped: bool = false
 
+# Attack Settings
+@export_group("Attack Settings")
+@export var attack_range: float = 60.0
+@export var attack_cooldown: float = 1.5
+@export var attack_duration: float = 0.3
+@export var attack_damage_window_start: float = 0.1
+@export var attack_damage_window_end: float = 0.25
+
+var attack_cooldown_timer: float = 0.0
+var attack_active_timer: float = 0.0
+var is_attacking_state: bool = false
+var has_dealt_damage_this_attack: bool = false
+
 @onready var edge_right: RayCast2D = $RayCast2D_EdgeRight
 @onready var edge_left: RayCast2D = $RayCast2D_EdgeLeft
 @onready var wall_ray: RayCast2D = $RayCast2D_Wall
@@ -79,8 +92,17 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
+	if current_state == State.DEAD:
+		_dead(delta)
+		return
+
+	# Process timers if alive
+	if attack_cooldown_timer > 0.0:
+		attack_cooldown_timer -= delta
+
 	# Knockback processing (shared from Actor)
 	if knockback_timer > 0.0:
+		is_attacking_state = false # Interrupt attack on hit/knockback
 		if current_state == State.ATTRACTED:
 			knockback_timer = 0.0
 		else:
@@ -90,6 +112,35 @@ func _physics_process(delta: float) -> void:
 				velocity.y += gravity * delta
 			move_and_slide()
 			return
+
+	if is_attacking_state:
+		attack_active_timer -= delta
+		velocity.x = 0.0
+		if not is_on_floor():
+			velocity.y += gravity * delta
+		move_and_slide()
+
+		# Active damage window check
+		var time_elapsed = attack_duration - attack_active_timer
+		if time_elapsed >= attack_damage_window_start and time_elapsed <= attack_damage_window_end:
+			if not has_dealt_damage_this_attack and player_ref and is_instance_valid(player_ref) and player_ref.current_state != player_ref.State.DEFEATED:
+				var player_pos = player_ref.global_position
+				var attack_center_x = global_position.x + direction * 38.0
+				var attack_center_y = global_position.y + 9.0
+
+				var dx = abs(player_pos.x - attack_center_x)
+				var dy = abs(player_pos.y - attack_center_y)
+				# 40x68 px bounding box overlay check
+				if dx <= 20.0 + 16.0 and dy <= 34.0 + 30.0:
+					player_ref.take_damage(contact_damage, global_position, self)
+					has_dealt_damage_this_attack = true
+					print("[ENEMY ATTACK] ", name, " hit player for ", contact_damage, " damage!")
+
+		if attack_active_timer <= 0.0:
+			is_attacking_state = false
+
+		queue_redraw()
+		return
 
 	match current_state:
 		State.PATROL: _patrol(delta)
@@ -141,6 +192,22 @@ func _chase(delta: float) -> void:
 		current_state = State.PATROL
 		return
 
+	# If within attack range, trigger attack
+	if dist <= attack_range and attack_cooldown_timer <= 0.0 and not is_attacking_state:
+		is_attacking_state = true
+		attack_active_timer = attack_duration
+		attack_cooldown_timer = attack_cooldown
+		has_dealt_damage_this_attack = false
+		velocity.x = 0.0
+		# Face player
+		var dx := player_ref.global_position.x - global_position.x
+		direction = 1 if dx > 0 else -1
+		if has_node("Sprite2D"):
+			$Sprite2D.flip_h = direction < 0
+		print("[ENEMY ATTACK] Triggered attack on player.")
+		queue_redraw()
+		return
+
 	if not is_on_floor():
 		velocity.y += gravity * delta
 
@@ -178,7 +245,8 @@ func _apply_contact_damage() -> void:
 	for body in contact_area.get_overlapping_bodies():
 		if body.is_in_group("player") and body.has_method("take_damage"):
 			if body.current_state != body.State.DEFEATED:
-				body.take_damage(contact_damage, global_position, self)
+				# contact damage is halved (reduced to half)
+				body.take_damage(int(round(contact_damage * 0.5)), global_position, self)
 
 # ── DEATH (override Actor.die) ───────────────────────────────────────────────
 func die() -> void:
@@ -266,3 +334,10 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO, attacker:
 		super(final_amount, Vector2.ZERO, attacker)
 	else:
 		super(final_amount, source_position, attacker)
+
+func _draw() -> void:
+	if is_attacking_state:
+		var is_facing_left = direction < 0
+		var x_pos = -58.0 if is_facing_left else 18.0
+		# Draw the attack rectangle (orange/red overlay)
+		draw_rect(Rect2(x_pos, -25.0, 40.0, 68.0), Color(0.85, 0.45, 0.15, 0.6))
