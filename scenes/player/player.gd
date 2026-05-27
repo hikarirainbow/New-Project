@@ -454,6 +454,13 @@ func _on_h_scene_tick() -> void:
 		corruption_component.reduce_max_sanity(5.0)
 		h_scene_tick.emit(corruption_component.max_sanity)
 		print("[H-SCENE TICK] Lost 5 max sanity. Current max sanity: ", corruption_component.max_sanity)
+	
+	# Heal 10% of max health on tick
+	var heal_amount := int(round(max_health * 0.1))
+	if heal_amount > 0:
+		current_health = min(max_health, current_health + heal_amount)
+		health_changed.emit(current_health)
+		print("[H-SCENE TICK] Recovered ", heal_amount, " HP (10% of max health). Current HP: ", current_health)
 
 # Respawn player at original spawn point coordinates
 func respawn() -> void:
