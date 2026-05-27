@@ -21,6 +21,15 @@ func _ready():
 		setup_player(player)
 	else:
 		print("HUD: Không tìm thấy Player trong scene!")
+		
+	# Programmatically instantiate and add EruptionIndicator
+	var eruption_script = load("res://scenes/ui/eruption_indicator.gd")
+	if eruption_script:
+		var indicator = Control.new()
+		indicator.name = "EruptionIndicator"
+		indicator.set_script(eruption_script)
+		$Control.add_child(indicator)
+		print("HUD: Programmatically added EruptionIndicator")
 
 # Thiết lập giá trị ban đầu cho thanh máu và kết nối Signal
 func setup_player(player):
