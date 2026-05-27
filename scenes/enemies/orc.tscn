@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://b8m7h8d3p10"]
+[gd_scene format=3 uid="uid://b8m7h8d3p10"]
 
 [ext_resource type="Script" path="res://scenes/enemies/orc.gd" id="1_orc_gd"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2_enemy_icon"]

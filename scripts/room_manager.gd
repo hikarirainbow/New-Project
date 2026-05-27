@@ -101,7 +101,14 @@ func save_room_state(room_path: String, room_node: Node) -> void:
 	var corpses = []
 	for enemy in room_node.get_tree().get_nodes_in_group("enemies"):
 		if is_instance_valid(enemy) and not enemy.is_alive():
-			corpses.append(enemy.global_position)
+			var type_str = "goblin"
+			if enemy is Orc:
+				type_str = "orc"
+			corpses.append({
+				"pos_x": enemy.global_position.x,
+				"pos_y": enemy.global_position.y,
+				"type": type_str
+			})
 			
 	# Limit maximum saved corpses to 15 per room to prevent rendering/physics lag
 	if corpses.size() > 15:

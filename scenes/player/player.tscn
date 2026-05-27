@@ -107,6 +107,7 @@ shape = SubResource("RectangleShape2D_attack")
 disabled = true
 
 [node name="AttackComponent" type="Node2D" parent="." unique_id=604077988]
+position = Vector2(-1, 0)
 script = ExtResource("3_attack_component_gd")
 
 [node name="DashComponent" type="Node" parent="." unique_id=1491419929]

@@ -2,6 +2,7 @@ extends Node2D
 
 const MapTile = preload("res://scenes/levels/map_tile.gd")
 const GoblinScene = preload("res://scenes/enemies/goblin.tscn")
+const OrcScene = preload("res://scenes/enemies/orc.tscn")
 
 const TILE  = 32
 const COLS  = 60   # 1920 px wide
@@ -105,9 +106,21 @@ func _restore_corpses() -> void:
 		
 	var path = scene_file_path
 	if room_manager.persisted_corpses.has(path):
-		var corpse_positions = room_manager.persisted_corpses[path]
-		for pos in corpse_positions:
-			var corpse = GoblinScene.instantiate()
+		var corpse_data = room_manager.persisted_corpses[path]
+		for data in corpse_data:
+			var corpse_scene = GoblinScene
+			var pos = Vector2.ZERO
+			
+			if typeof(data) == TYPE_DICTIONARY:
+				var type = data.get("type", "goblin")
+				if type == "orc":
+					corpse_scene = OrcScene
+				pos = Vector2(data.get("pos_x", 0.0), data.get("pos_y", 0.0))
+			else:
+				# Backwards compatibility with old Vector2 format
+				pos = data
+				
+			var corpse = corpse_scene.instantiate()
 			corpse.set_as_corpse()
 			corpse.position = pos
 			add_child(corpse)
@@ -174,7 +187,9 @@ func _maintain_enemies() -> void:
 			
 	while alive_count < 5:
 		var spawn_pos = _get_valid_spawn_position()
-		var new_enemy = GoblinScene.instantiate()
+		# 50% chance to spawn either a Goblin or an Orc
+		var enemy_scene = GoblinScene if randf() < 0.5 else OrcScene
+		var new_enemy = enemy_scene.instantiate()
 		new_enemy.position = spawn_pos
 		add_child(new_enemy)
 		alive_count += 1

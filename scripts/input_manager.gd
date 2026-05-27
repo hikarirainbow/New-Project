@@ -91,4 +91,3 @@ func remap_action(action_name: String, new_keycode: int) -> void:
 	current_controls[action_name] = new_keycode
 	save_controls()
 	apply_controls()
-
