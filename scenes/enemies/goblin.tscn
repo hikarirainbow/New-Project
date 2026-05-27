@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://clx5i2t2r8gpb"]
+[gd_scene format=3 uid="uid://clx5i2t2r8gpb"]
 
 [ext_resource type="Script" path="res://scenes/enemies/goblin.gd" id="1_goblin_gd"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2_enemy_icon"]

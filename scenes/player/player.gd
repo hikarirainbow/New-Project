@@ -364,6 +364,22 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO) -> void:
 
 # Defeat sequence
 func die() -> void:
+	# Clear any previous corpses
+	var old_corpses = get_tree().get_nodes_in_group("player_corpse")
+	for old_corpse in old_corpses:
+		if is_instance_valid(old_corpse):
+			old_corpse.queue_free()
+			
+	# Spawn new player corpse
+	var corpse_scene = load("res://scenes/player/player_corpse.tscn")
+	if corpse_scene:
+		var corpse = corpse_scene.instantiate()
+		corpse.global_position = global_position
+		corpse.max_health = max_health
+		corpse.current_health = max_health
+		get_parent().call_deferred("add_child", corpse)
+		print("[DEATH] Spawned player corpse at: ", global_position, " with health: ", max_health)
+
 	current_state = State.DEFEATED
 	player_defeated.emit()
 	print("Player has been defeated!")
