@@ -7,8 +7,11 @@ const JUMP_VELOCITY   = -450.0  # ~103px apex
 const ACCELERATION    = 1000.0
 
 # Finite State Machine (FSM) definition
-enum State { MOVE, GRABBED, DEFEATED, DASH, CLIMB }
+enum State { MOVE, GRABBED, DEFEATED, DASH, CLIMB, RAPE }
 var current_state = State.MOVE
+
+var rape_target_enemy: Node2D = null
+var rape_timer: float = 0.0
 
 # Player-specific debuff status
 var is_debuffed = false
@@ -126,11 +129,29 @@ func _physics_process(delta: float) -> void:
 			dash_component.process_dash(delta)
 		State.CLIMB:
 			climb_component.process_climb(delta)
+		State.RAPE:
+			handle_rape_state(delta)
 			
 	_update_camera_look(delta)
 
 # Logic loop for free movement state
 func handle_move_state(delta: float) -> void:
+	# Check for special H-scene (rape) trigger
+	if Input.is_action_just_pressed("skill_rape"):
+		var enemies = get_tree().get_nodes_in_group("enemies")
+		var closest_enemy: Node2D = null
+		var min_dist = 150.0 # Max trigger range
+		for enemy in enemies:
+			if is_instance_valid(enemy) and enemy.has_method("is_alive") and enemy.is_alive():
+				if enemy.get("current_state") == 3: # 3 = State.ATTRACTED
+					var dist = global_position.distance_to(enemy.global_position)
+					if dist < min_dist:
+						min_dist = dist
+						closest_enemy = enemy
+		if closest_enemy:
+			start_rape(closest_enemy)
+			return
+
 	# If attacking, lock control direction and brake horizontal movement on floor
 	if attack_component.is_attacking():
 		if is_on_floor() and recoil_timer <= 0.0:
@@ -461,6 +482,67 @@ func _on_h_scene_tick() -> void:
 		current_health = min(max_health, current_health + heal_amount)
 		health_changed.emit(current_health)
 		print("[H-SCENE TICK] Recovered ", heal_amount, " HP (25% of max health). Current HP: ", current_health)
+
+func start_rape(enemy: Node2D) -> void:
+	current_state = State.RAPE
+	rape_target_enemy = enemy
+	rape_timer = 5.0
+	_h_scene_active = true
+	h_scene_timer = 0.0
+	
+	if is_instance_valid(enemy):
+		enemy.set("is_being_raped", true)
+		
+		# Set direction
+		var dir = 1.0 if enemy.global_position.x > global_position.x else -1.0
+		if has_node("Sprite2D"):
+			$Sprite2D.flip_h = dir < 0
+			$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red
+			
+		var enemy_sprite = enemy.get_node_or_null("Sprite2D")
+		if enemy_sprite:
+			enemy_sprite.flip_h = dir > 0
+			
+		# Auto-correction positioning
+		var offset_x = 45.0 if "Orc" in enemy.name or enemy.get_script().get_path().contains("orc") else 30.0
+		enemy.global_position.x = global_position.x + dir * offset_x
+		enemy.global_position.y = global_position.y
+		
+		# Deal 50% max HP damage to the enemy
+		var damage_amount = int(round(enemy.max_health * 0.5))
+		enemy.take_damage(damage_amount, global_position, self)
+		print("[RAPE] Started on ", enemy.name, ", dealt ", damage_amount, " damage (50% max HP).")
+		
+		h_scene_triggered.emit(enemy)
+
+func handle_rape_state(delta: float) -> void:
+	velocity = Vector2.ZERO
+	
+	if not is_instance_valid(rape_target_enemy) or not rape_target_enemy.is_alive():
+		exit_rape()
+		return
+		
+	# Keep target enemy position locked to player
+	var dir = -1.0 if $Sprite2D.flip_h else 1.0
+	var offset_x = 45.0 if "Orc" in rape_target_enemy.name or rape_target_enemy.get_script().get_path().contains("orc") else 30.0
+	rape_target_enemy.global_position.x = global_position.x + dir * offset_x
+	rape_target_enemy.global_position.y = global_position.y
+	
+	rape_timer -= delta
+	if rape_timer <= 0.0:
+		_on_h_scene_tick()
+		exit_rape()
+
+func exit_rape() -> void:
+	current_state = State.MOVE
+	_h_scene_active = false
+	h_scene_timer = 0.0
+	if is_instance_valid(rape_target_enemy):
+		rape_target_enemy.set("is_being_raped", false)
+	rape_target_enemy = null
+	if has_node("Sprite2D"):
+		$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	print("[RAPE] Exited rape H-scene.")
 
 # Respawn player at original spawn point coordinates
 func respawn() -> void:

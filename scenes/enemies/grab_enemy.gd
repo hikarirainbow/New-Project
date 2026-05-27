@@ -24,6 +24,7 @@ var current_state: State = State.PATROL
 var direction: int = 1
 var player_ref: Player = null
 var contact_area: Area2D = null
+var is_being_raped: bool = false
 
 @onready var edge_right: RayCast2D = $RayCast2D_EdgeRight
 @onready var edge_left: RayCast2D = $RayCast2D_EdgeLeft
@@ -74,6 +75,10 @@ func _setup_contact_area() -> void:
 	add_child(contact_area)
 
 func _physics_process(delta: float) -> void:
+	if is_being_raped:
+		velocity = Vector2.ZERO
+		return
+
 	# Knockback processing (shared from Actor)
 	if knockback_timer > 0.0:
 		if current_state == State.ATTRACTED:

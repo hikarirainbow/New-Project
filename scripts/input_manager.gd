@@ -12,7 +12,8 @@ var default_controls: Dictionary = {
 	"inventory": KEY_ALT,
 	"look_up": KEY_W,
 	"look_down": KEY_S,
-	"skill_attract": KEY_F
+	"skill_attract": KEY_F,
+	"skill_rape": KEY_A
 }
 
 var current_controls: Dictionary = {}
@@ -41,6 +42,14 @@ func load_controls() -> void:
 		if typeof(data) == TYPE_DICTIONARY:
 			for action in data.keys():
 				current_controls[action] = int(data[action])
+			# Migration fallback for new default controls
+			var migrated := false
+			for key in default_controls.keys():
+				if not current_controls.has(key):
+					current_controls[key] = default_controls[key]
+					migrated = true
+			if migrated:
+				save_controls()
 			apply_controls()
 	else:
 		print("InputManager: Lỗi đọc file cấu hình: ", json.get_error_message())
