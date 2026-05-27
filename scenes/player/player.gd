@@ -89,6 +89,12 @@ func _ready() -> void:
 	qte_indicator.position = qte_indicator_offset
 	add_child(qte_indicator)
 
+	# Programmatically instantiate and anchor Attract Skill Component
+	var attract_skill = Node2D.new()
+	attract_skill.name = "AttractSkillComponent"
+	attract_skill.set_script(load("res://scenes/player/components/attract_skill_component.gd"))
+	add_child(attract_skill)
+
 func _physics_process(delta: float) -> void:
 	if knockback_timer > 0.0:
 		knockback_timer -= delta

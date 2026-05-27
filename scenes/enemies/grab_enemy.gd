@@ -1,3 +1,4 @@
+class_name GrabEnemy
 extends Actor
 
 @export_group("Enemy Settings")
@@ -17,7 +18,7 @@ extends Actor
 @export var key_name_to_drop: String = "Boss Key"
 @export var key_pickup_radius: float = 20.0
 
-enum State { PATROL, CHASE, DEAD }
+enum State { PATROL, CHASE, DEAD, ATTRACTED }
 var current_state: State = State.PATROL
 
 var direction: int = 1
@@ -75,17 +76,21 @@ func _setup_contact_area() -> void:
 func _physics_process(delta: float) -> void:
 	# Knockback processing (shared from Actor)
 	if knockback_timer > 0.0:
-		knockback_timer -= delta
-		velocity.x = move_toward(velocity.x, 0, friction * delta)
-		if not is_on_floor():
-			velocity.y += gravity * delta
-		move_and_slide()
-		return
+		if current_state == State.ATTRACTED:
+			knockback_timer = 0.0
+		else:
+			knockback_timer -= delta
+			velocity.x = move_toward(velocity.x, 0, friction * delta)
+			if not is_on_floor():
+				velocity.y += gravity * delta
+			move_and_slide()
+			return
 
 	match current_state:
 		State.PATROL: _patrol(delta)
 		State.CHASE:  _chase(delta)
 		State.DEAD:   _dead(delta)
+		State.ATTRACTED: _attracted(delta)
 
 # ── PATROL ──────────────────────────────────────────────────────────────────
 func _patrol(delta: float) -> void:
@@ -220,3 +225,34 @@ func _on_corpse_body_entered(body: Node2D) -> void:
 
 func is_alive() -> bool:
 	return current_state != State.DEAD
+
+# ── ATTRACTED ────────────────────────────────────────────────────────────────
+func _attracted(delta: float) -> void:
+	if not player_ref:
+		current_state = State.PATROL
+		return
+
+	if not is_on_floor():
+		velocity.y += gravity * delta
+
+	# Move towards player horizontally
+	var dx := player_ref.global_position.x - global_position.x
+	direction = 1 if dx > 0 else -1
+	if has_node("Sprite2D"):
+		$Sprite2D.flip_h = direction < 0
+
+	velocity.x = direction * (chase_speed * 0.5)
+	move_and_slide()
+	_apply_contact_damage()
+
+# Override take_damage to support double damage and bypass knockback when attracted
+func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO) -> void:
+	if current_state == State.DEAD:
+		return
+		
+	var final_amount = amount
+	if current_state == State.ATTRACTED:
+		final_amount = amount * 2
+		super(final_amount, Vector2.ZERO)
+	else:
+		super(final_amount, source_position)

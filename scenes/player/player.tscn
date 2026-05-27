@@ -93,7 +93,6 @@ position = Vector2(0, 4)
 shape = SubResource("RectangleShape2D_player")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=175367551]
-offset = Vector2(5, 5)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 

@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player_tscn"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="2_hud_tscn"]
 [ext_resource type="PackedScene" path="res://scenes/items/dash_upgrade_item.tscn" id="4_dash_upgrade_item_tscn"]
-[ext_resource type="PackedScene" path="res://scenes/enemies/grab_enemy.tscn" id="5_grab_enemy_tscn"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/goblin.tscn" id="5_goblin_tscn"]
 [ext_resource type="PackedScene" path="res://scenes/ui/settings_menu.tscn" id="6_settings_menu_tscn"]
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory.tscn" id="7_inventory_tscn"]
 
@@ -23,5 +23,5 @@ position = Vector2(160, 576)
 [node name="DashUpgradeItem" parent="." instance=ExtResource("4_dash_upgrade_item_tscn")]
 position = Vector2(960, 592)
 
-[node name="GrabEnemy" parent="." instance=ExtResource("5_grab_enemy_tscn")]
+[node name="Goblin" parent="." instance=ExtResource("5_goblin_tscn")]
 position = Vector2(640, 592)

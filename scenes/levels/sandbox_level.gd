@@ -1,7 +1,7 @@
 extends Node2D
 
 const MapTile = preload("res://scenes/levels/map_tile.gd")
-const GrabEnemyScene = preload("res://scenes/enemies/grab_enemy.tscn")
+const GoblinScene = preload("res://scenes/enemies/goblin.tscn")
 
 const TILE  = 32
 const COLS  = 60   # 1920 px wide
@@ -107,7 +107,7 @@ func _restore_corpses() -> void:
 	if room_manager.persisted_corpses.has(path):
 		var corpse_positions = room_manager.persisted_corpses[path]
 		for pos in corpse_positions:
-			var corpse = GrabEnemyScene.instantiate()
+			var corpse = GoblinScene.instantiate()
 			corpse.set_as_corpse()
 			corpse.position = pos
 			add_child(corpse)
@@ -174,7 +174,7 @@ func _maintain_enemies() -> void:
 			
 	while alive_count < 5:
 		var spawn_pos = _get_valid_spawn_position()
-		var new_enemy = GrabEnemyScene.instantiate()
+		var new_enemy = GoblinScene.instantiate()
 		new_enemy.position = spawn_pos
 		add_child(new_enemy)
 		alive_count += 1

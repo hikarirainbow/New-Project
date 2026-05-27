@@ -11,7 +11,8 @@ var default_controls: Dictionary = {
 	"attack": KEY_X,
 	"inventory": KEY_ALT,
 	"look_up": KEY_W,
-	"look_down": KEY_S
+	"look_down": KEY_S,
+	"skill_attract": KEY_F
 }
 
 var current_controls: Dictionary = {}
