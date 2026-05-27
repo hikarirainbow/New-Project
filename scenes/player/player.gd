@@ -503,16 +503,7 @@ func start_rape(enemy: Node2D) -> void:
 		if enemy_sprite:
 			enemy_sprite.flip_h = dir > 0
 			
-		# Auto-correction positioning
-		var offset_x = 45.0 if "Orc" in enemy.name or enemy.get_script().get_path().contains("orc") else 30.0
-		enemy.global_position.x = global_position.x + dir * offset_x
-		enemy.global_position.y = global_position.y
-		
-		# Deal 50% max HP damage to the enemy
-		var damage_amount = int(round(enemy.max_health * 0.5))
-		enemy.take_damage(damage_amount, global_position, self)
-		print("[RAPE] Started on ", enemy.name, ", dealt ", damage_amount, " damage (50% max HP).")
-		
+		print("[RAPE] Started on ", enemy.name, ". Locked both and starting H-scene.")
 		h_scene_triggered.emit(enemy)
 
 func handle_rape_state(delta: float) -> void:
@@ -522,16 +513,39 @@ func handle_rape_state(delta: float) -> void:
 		exit_rape()
 		return
 		
-	# Keep target enemy position locked to player
-	var dir = -1.0 if $Sprite2D.flip_h else 1.0
+	# Smoothly lerp PLAYER position towards the target position adjacent to the ENEMY
+	var dir = 1.0 if rape_target_enemy.global_position.x > global_position.x else -1.0
 	var offset_x = 45.0 if "Orc" in rape_target_enemy.name or rape_target_enemy.get_script().get_path().contains("orc") else 30.0
-	rape_target_enemy.global_position.x = global_position.x + dir * offset_x
-	rape_target_enemy.global_position.y = global_position.y
+	
+	var target_x = rape_target_enemy.global_position.x - dir * offset_x
+	var target_y = rape_target_enemy.global_position.y
+	
+	global_position.x = lerp(global_position.x, target_x, 15.0 * delta)
+	global_position.y = lerp(global_position.y, target_y, 15.0 * delta)
+	
+	if has_node("Sprite2D"):
+		$Sprite2D.flip_h = dir < 0
+	var enemy_sprite = rape_target_enemy.get_node_or_null("Sprite2D")
+	if enemy_sprite:
+		enemy_sprite.flip_h = dir > 0
 	
 	rape_timer -= delta
 	if rape_timer <= 0.0:
-		_on_h_scene_tick()
+		_on_h_scene_tick() # Eruption tick (lost max sanity, heal player)
+		
+		# Deal 50% of CURRENT health damage to the enemy
+		var damage_amount = int(round(rape_target_enemy.current_health * 0.5))
+		rape_target_enemy.take_damage(damage_amount, global_position, self)
+		print("[RAPE] Completed. Dealt ", damage_amount, " damage to ", rape_target_enemy.name, " (50% current HP).")
+		
+		# 50% chance to knock the player back physically (does not trigger player QTE)
+		var should_knockback = randf() < 0.5
+		var temp_enemy = rape_target_enemy # Keep reference before exit_rape clears it
 		exit_rape()
+		
+		if should_knockback and is_instance_valid(temp_enemy) and temp_enemy.has_method("is_alive") and temp_enemy.is_alive():
+			apply_knockback(temp_enemy.global_position, 300.0)
+			print("[RAPE] Monster knocked player back on release.")
 
 func exit_rape() -> void:
 	current_state = State.MOVE
