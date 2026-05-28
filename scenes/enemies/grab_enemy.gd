@@ -374,7 +374,13 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO, attacker:
 		
 	var final_amount = amount
 	if current_state == State.ATTRACTED:
-		final_amount = amount * 2
+		var is_in_h_scene = is_being_raped
+		if is_instance_valid(attacker) and attacker is Player:
+			if attacker.current_state == Player.State.GRABBED or attacker.current_state == Player.State.RAPE:
+				is_in_h_scene = true
+		
+		if not is_in_h_scene:
+			final_amount = amount * 2
 		super(final_amount, Vector2.ZERO, attacker)
 		return
 
