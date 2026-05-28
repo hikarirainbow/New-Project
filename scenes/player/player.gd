@@ -581,8 +581,8 @@ func _on_h_scene_tick() -> void:
 			damage_amount = int(round(active_enemy.current_health * 0.5))
 			print("[H-SCENE TICK] Eruption tick ", count, ". Dealt ", damage_amount, " damage to ", active_enemy.name, " (50% current HP).")
 			
-		# Eruption screen shake for 1 second with intensity 10.0
-		camera_shake_timer = 1.0
+		# Eruption screen shake for 0.8 seconds with intensity 10.0 (using 3-phase envelope)
+		camera_shake_timer = 0.8
 		camera_shake_intensity = 10.0
 		if qte_indicator and qte_indicator.visible:
 			qte_indicator.shake_amount = 10.0
@@ -724,12 +724,24 @@ func _update_camera_look(delta: float) -> void:
 				
 	camera_look_offset_y = lerp(camera_look_offset_y, target_offset_y, camera_look_pan_speed * delta)
 	
-	# Apply eruption screen shake offset if active
+	# Apply eruption screen shake offset if active (3-phase envelope: 0.2s ramp-up, 0.4s peak, 0.2s decay)
 	if camera_shake_timer > 0.0:
 		camera_shake_timer -= delta
+		var elapsed = 0.8 - camera_shake_timer
+		var multiplier = 0.0
+		if elapsed < 0.2:
+			multiplier = elapsed / 0.2
+		elif elapsed < 0.6:
+			multiplier = 1.0
+		elif elapsed < 0.8:
+			multiplier = (0.8 - elapsed) / 0.2
+		else:
+			multiplier = 0.0
+			
+		var current_intensity = camera_shake_intensity * multiplier
 		var shake_offset = Vector2(
-			randf_range(-camera_shake_intensity, camera_shake_intensity),
-			randf_range(-camera_shake_intensity, camera_shake_intensity)
+			randf_range(-current_intensity, current_intensity),
+			randf_range(-current_intensity, current_intensity)
 		)
 		camera.offset = Vector2(shake_offset.x, camera_look_offset_y + shake_offset.y)
 	else:
