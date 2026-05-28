@@ -125,7 +125,7 @@ func _physics_process(delta: float) -> void:
 	if camera:
 		var target_zoom = default_camera_zoom
 		if _h_scene_active:
-			target_zoom = Vector2(4.0, 4.0)
+			target_zoom = Vector2(5.0, 5.0)
 		camera.zoom = camera.zoom.lerp(target_zoom, 5.0 * delta)
 		
 	# Process invincibility timer and sprite flashing effect
