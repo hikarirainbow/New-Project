@@ -10,3 +10,4 @@ func _init() -> void:
 	sp_gain = 2
 	contact_hitbox_size = Vector2(60.0, 90.0)
 	key_name_to_drop = "Boss Key"
+	attack_cooldown = 2.8

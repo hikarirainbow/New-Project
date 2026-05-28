@@ -29,10 +29,10 @@ var is_being_raped: bool = false
 # Attack Settings
 @export_group("Attack Settings")
 @export var attack_range: float = 60.0
-@export var attack_cooldown: float = 1.5
-@export var attack_duration: float = 0.3
-@export var attack_damage_window_start: float = 0.1
-@export var attack_damage_window_end: float = 0.25
+@export var attack_cooldown: float = 2.2
+@export var attack_duration: float = 1.0
+@export var attack_damage_window_start: float = 0.8
+@export var attack_damage_window_end: float = 0.95
 
 var attack_cooldown_timer: float = 0.0
 var attack_active_timer: float = 0.0
@@ -102,7 +102,11 @@ func _physics_process(delta: float) -> void:
 
 	# Knockback processing (shared from Actor)
 	if knockback_timer > 0.0:
-		is_attacking_state = false # Interrupt attack on hit/knockback
+		if is_attacking_state:
+			is_attacking_state = false # Interrupt attack on hit/knockback
+			if has_node("Sprite2D"):
+				$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
+			queue_redraw()
 		if current_state == State.ATTRACTED:
 			knockback_timer = 0.0
 		else:
@@ -122,6 +126,19 @@ func _physics_process(delta: float) -> void:
 
 		# Active damage window check
 		var time_elapsed = attack_duration - attack_active_timer
+		
+		# Telegraphing visual: flash/modulate red during wind-up
+		if has_node("Sprite2D"):
+			if time_elapsed < attack_damage_window_start:
+				var flash = int(time_elapsed * 15.0) % 2 == 0
+				$Sprite2D.modulate = Color(1.0, 0.3, 0.3, 1.0) if flash else Color(1.0, 0.8, 0.8, 1.0)
+			else:
+				# Restore standard modulate for active frames and recovery
+				if current_state == State.DEAD:
+					$Sprite2D.modulate = Color(0.5, 0.5, 0.5, 1.0)
+				else:
+					$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
+
 		if time_elapsed >= attack_damage_window_start and time_elapsed <= attack_damage_window_end:
 			if not has_dealt_damage_this_attack and player_ref and is_instance_valid(player_ref) and player_ref.current_state != player_ref.State.DEFEATED:
 				var player_pos = player_ref.global_position
@@ -138,6 +155,8 @@ func _physics_process(delta: float) -> void:
 
 		if attack_active_timer <= 0.0:
 			is_attacking_state = false
+			if has_node("Sprite2D"):
+				$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
 		queue_redraw()
 		return
@@ -156,6 +175,7 @@ func _patrol(delta: float) -> void:
 	# Transition → CHASE if player is within radius
 	if player_ref and global_position.distance_to(player_ref.global_position) <= chase_radius:
 		current_state = State.CHASE
+		attack_cooldown_timer = 0.8 # Initial reaction delay when spotting player
 		return
 
 	var should_flip := false
@@ -217,15 +237,37 @@ func _chase(delta: float) -> void:
 	if has_node("Sprite2D"):
 		$Sprite2D.flip_h = direction < 0
 
-	# Simple wall-jump: if blocked by wall and player is above, jump
-	wall_ray.target_position.x = direction * wall_raycast_length
-	wall_ray.force_raycast_update()
-	if wall_ray.is_colliding() and is_on_floor():
-		var dy := player_ref.global_position.y - global_position.y
-		if dy < jump_height_threshold:
-			velocity.y = -wall_jump_force
+	var move_direction := direction
+	var current_speed := chase_speed
+	
+	# Maintain combat distance during cooldown to prevent collision contact damage spam
+	if attack_cooldown_timer > 0.0:
+		var retreat_threshold = attack_range + 10.0 # 70px
+		var stop_threshold = attack_range + 35.0    # 95px
+		
+		if dist < retreat_threshold:
+			# Too close! Back away slowly (opposite of player direction)
+			move_direction = -direction
+			current_speed = patrol_speed * 0.8
+		elif dist <= stop_threshold:
+			# In the sweet spot, stand still and wait
+			move_direction = 0
+			current_speed = 0.0
+		else:
+			# Too far, close the gap slowly
+			move_direction = direction
+			current_speed = chase_speed * 0.7
 
-	velocity.x = direction * chase_speed
+	# Simple wall-jump: if blocked by wall and player is above, jump
+	if move_direction != 0:
+		wall_ray.target_position.x = move_direction * wall_raycast_length
+		wall_ray.force_raycast_update()
+		if wall_ray.is_colliding() and is_on_floor():
+			var dy := player_ref.global_position.y - global_position.y
+			if dy < jump_height_threshold:
+				velocity.y = -wall_jump_force
+
+	velocity.x = move_direction * current_speed
 	move_and_slide()
 	_apply_contact_damage()
 
@@ -251,6 +293,8 @@ func _apply_contact_damage() -> void:
 # ── DEATH (override Actor.die) ───────────────────────────────────────────────
 func die() -> void:
 	current_state = State.DEAD
+	is_attacking_state = false
+	queue_redraw()
 
 	# Remove enemy collision; keep floor collision so corpse doesn't fall through
 	set_deferred("collision_layer", 0)
@@ -332,8 +376,38 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO, attacker:
 	if current_state == State.ATTRACTED:
 		final_amount = amount * 2
 		super(final_amount, Vector2.ZERO, attacker)
-	else:
-		super(final_amount, source_position, attacker)
+		return
+
+	# Check if hit during attack wind-up (charge phase)
+	if is_attacking_state:
+		var time_elapsed = attack_duration - attack_active_timer
+		if time_elapsed < attack_damage_window_start:
+			# Wind-up phase: 20% chance to disrupt (reset wind-up)
+			if randf() < 0.20:
+				# Reset wind-up to start
+				attack_active_timer = attack_duration
+				has_dealt_damage_this_attack = false
+				print("[COMBAT] ", name, " wind-up disrupted! Resetting charge.")
+				# Play a quick visual cue (flash bright white briefly)
+				if has_node("Sprite2D"):
+					$Sprite2D.modulate = Color(2.0, 2.0, 2.0, 1.0)
+					var t = create_tween()
+					t.tween_property($Sprite2D, "modulate", Color(1.0, 0.3, 0.3, 1.0), 0.1)
+				# Deal damage but NO knockback (pass Vector2.ZERO)
+				super(final_amount, Vector2.ZERO, attacker)
+				queue_redraw()
+				return
+			else:
+				# 80% chance: ignore interrupt (super armor), deal damage but NO knockback
+				print("[COMBAT] ", name, " ignored interrupt during wind-up (super armor).")
+				super(final_amount, Vector2.ZERO, attacker)
+				return
+		else:
+			# During active/recovery frames, let it be interrupted normally
+			super(final_amount, source_position, attacker)
+			return
+
+	super(final_amount, source_position, attacker)
 
 func _draw() -> void:
 	if is_attacking_state:

@@ -28,6 +28,7 @@ func _physics_process(delta: float) -> void:
 
 func cast_skill() -> void:
 	cooldown_timer = cooldown_duration
+	player.attract_cast_timer = 0.3 # Lock player direction/movement during cast
 	
 	# Deduct 20 sanity points on cast
 	if player.corruption_component:

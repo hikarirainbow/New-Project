@@ -49,6 +49,7 @@ var is_invincible = false
 var recoil_timer: float = 0.0
 var is_at_checkpoint: bool = false
 var has_double_jumped: bool = false
+var attract_cast_timer: float = 0.0
 
 # Quick Time Event (QTE) tracking variables
 var qte_progress: float = 0.0
@@ -107,6 +108,9 @@ func _physics_process(delta: float) -> void:
 
 	if recoil_timer > 0.0:
 		recoil_timer -= delta
+
+	if attract_cast_timer > 0.0:
+		attract_cast_timer -= delta
 		
 	# Process invincibility timer and sprite flashing effect
 	if invincibility_timer > 0.0:
@@ -136,6 +140,16 @@ func _physics_process(delta: float) -> void:
 
 # Logic loop for free movement state
 func handle_move_state(delta: float) -> void:
+	# If casting attract skill, lock control/movement and lock direction
+	if attract_cast_timer > 0.0:
+		if is_on_floor():
+			velocity.x = 0.0
+		if not is_on_floor():
+			var active_gravity = gravity * fall_gravity_multiplier if velocity.y > 0 else gravity
+			velocity.y += active_gravity * delta
+		move_and_slide()
+		return
+
 	# Check for special H-scene (rape) trigger
 	if Input.is_action_just_pressed("skill_rape"):
 		var enemies = get_tree().get_nodes_in_group("enemies")
@@ -398,6 +412,10 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO, attacker:
 	attack_component.interrupt()
 	dash_component.interrupt()
 	climb_component.interrupt()
+	attract_cast_timer = 0.0
+	var attract_skill = get_node_or_null("AttractSkillComponent")
+	if attract_skill:
+		attract_skill.cone_alpha = 0.0
 	
 	var is_below_half_hp = current_health < max_health * 0.5
 	var would_survive = (current_health - final_amount) > 0
