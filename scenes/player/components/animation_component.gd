@@ -21,6 +21,7 @@ const ANIM_DEFEATED   = "defeated"
 # Decoupled component references
 @onready var player: Player = get_parent()
 @onready var anim_player: AnimationPlayer = player.get_node_or_null("AnimationPlayer")
+@onready var sprite: Sprite2D = player.get_node_or_null("Sprite2D")
 
 # Internal state tracking for transient transitions
 var _current_anim: String = ""
@@ -39,8 +40,8 @@ func _ready() -> void:
 		push_warning("AnimationComponent: No AnimationPlayer found on parent. Running in headless/silent mode.")
 	
 	# Detect initial facing direction from Sprite2D's flip status
-	if player.has_node("Sprite2D"):
-		_last_facing_dir = -1 if player.get_node("Sprite2D").flip_h else 1
+	if sprite:
+		_last_facing_dir = -1 if sprite.flip_h else 1
 	_was_on_floor = player.is_on_floor()
 
 func _physics_process(delta: float) -> void:
@@ -58,8 +59,8 @@ func _physics_process(delta: float) -> void:
 
 	# 3. Update persistent flags at the end of the frame
 	_was_on_floor = player.is_on_floor()
-	if player.has_node("Sprite2D"):
-		var current_facing = -1 if player.get_node("Sprite2D").flip_h else 1
+	if sprite:
+		var current_facing = -1 if sprite.flip_h else 1
 		if current_facing != _last_facing_dir:
 			_last_facing_dir = current_facing
 

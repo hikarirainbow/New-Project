@@ -13,7 +13,8 @@ var default_controls: Dictionary = {
 	"look_up": KEY_W,
 	"look_down": KEY_S,
 	"skill_attract": KEY_F,
-	"skill_rape": KEY_A
+	"skill_rape": KEY_A,
+	"toggle_debug": KEY_F4
 }
 
 var current_controls: Dictionary = {}

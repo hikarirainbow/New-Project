@@ -10,6 +10,7 @@ const ROWS  = 20   # 640 px tall
 
 var rng := RandomNumberGenerator.new()
 var solid_cells := {}
+var spawn_check_timer: float = 0.0
 
 func _ready() -> void:
 	rng.randomize()
@@ -20,8 +21,11 @@ func _ready() -> void:
 	_setup_camera_limits()
 	_apply_save_data()
 
-func _physics_process(_delta: float) -> void:
-	_maintain_enemies()
+func _physics_process(delta: float) -> void:
+	spawn_check_timer += delta
+	if spawn_check_timer >= 1.0:
+		spawn_check_timer = 0.0
+		_maintain_enemies()
 
 # ── AMBIENT DARKNESS ─────────────────────────────────────────────────────────
 func _setup_darkness() -> void:
