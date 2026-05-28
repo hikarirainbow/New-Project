@@ -62,6 +62,9 @@ var qte_attacker: Node2D = null
 var h_scene_timer: float = 0.0
 var h_scene_direction: float = 1.0
 var h_scene_cooldown: float = 0.0
+var camera_look_offset_y: float = 0.0
+var camera_shake_timer: float = 0.0
+var camera_shake_intensity: float = 0.0
 
 # Custom signal emitted on player defeat
 signal player_defeated
@@ -116,6 +119,14 @@ func _physics_process(delta: float) -> void:
 		
 	if h_scene_cooldown > 0.0:
 		h_scene_cooldown -= delta
+		
+	# Smoothly lerp camera zoom based on active H-scene
+	var camera = get_node_or_null("Camera2D")
+	if camera:
+		var target_zoom = default_camera_zoom
+		if _h_scene_active:
+			target_zoom = Vector2(4.0, 4.0)
+		camera.zoom = camera.zoom.lerp(target_zoom, 5.0 * delta)
 		
 	# Process invincibility timer and sprite flashing effect
 	if invincibility_timer > 0.0:
@@ -251,6 +262,7 @@ func handle_grabbed_state(delta: float) -> void:
 		qte_attacker = null
 		h_scene_timer = 0.0
 		h_scene_cooldown = 2.0
+		_h_scene_active = false
 		if qte_indicator:
 			qte_indicator.visible = false
 		is_invincible = true
@@ -372,6 +384,7 @@ func handle_grabbed_state(delta: float) -> void:
 		qte_attacker = null
 		h_scene_timer = 0.0
 		h_scene_cooldown = 2.0
+		_h_scene_active = false
 		if qte_indicator:
 			qte_indicator.visible = false
 		# Grant player invincibility buffer upon escape
@@ -568,6 +581,12 @@ func _on_h_scene_tick() -> void:
 			damage_amount = int(round(active_enemy.current_health * 0.5))
 			print("[H-SCENE TICK] Eruption tick ", count, ". Dealt ", damage_amount, " damage to ", active_enemy.name, " (50% current HP).")
 			
+		# Eruption screen shake for 1 second with intensity 10.0
+		camera_shake_timer = 1.0
+		camera_shake_intensity = 10.0
+		if qte_indicator and qte_indicator.visible:
+			qte_indicator.shake_amount = 10.0
+			
 		active_enemy.take_damage(damage_amount, global_position, self)
 
 func start_rape(enemy: Node2D) -> void:
@@ -703,7 +722,18 @@ func _update_camera_look(delta: float) -> void:
 			if Input.is_action_pressed("look_down"):
 				target_offset_y += camera_look_pan_distance
 				
-	camera.offset.y = lerp(camera.offset.y, target_offset_y, camera_look_pan_speed * delta)
+	camera_look_offset_y = lerp(camera_look_offset_y, target_offset_y, camera_look_pan_speed * delta)
+	
+	# Apply eruption screen shake offset if active
+	if camera_shake_timer > 0.0:
+		camera_shake_timer -= delta
+		var shake_offset = Vector2(
+			randf_range(-camera_shake_intensity, camera_shake_intensity),
+			randf_range(-camera_shake_intensity, camera_shake_intensity)
+		)
+		camera.offset = Vector2(shake_offset.x, camera_look_offset_y + shake_offset.y)
+	else:
+		camera.offset = Vector2(camera.offset.x, camera_look_offset_y)
 
 # Apply recoil pushback on melee hit
 func apply_melee_recoil(direction_x: float, force: float = 160.0) -> void:
