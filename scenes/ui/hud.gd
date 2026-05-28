@@ -8,6 +8,8 @@ extends CanvasLayer
 @onready var screen_fade  = $Control/ScreenFade
 
 var _corruption_node = null
+var vignette_rect: TextureRect = null
+var flash_rect: ColorRect = null
 
 func _ready():
 	add_to_group("hud")
@@ -30,6 +32,47 @@ func _ready():
 		indicator.set_script(eruption_script)
 		$Control.add_child(indicator)
 		print("HUD: Programmatically added EruptionIndicator")
+		
+	# Programmatically instantiate and add DebugOverlay
+	var debug_script = load("res://scenes/ui/debug_overlay.gd")
+	if debug_script:
+		var debug_overlay = Control.new()
+		debug_overlay.name = "DebugOverlay"
+		debug_overlay.set_script(debug_script)
+		$Control.add_child(debug_overlay)
+		print("HUD: Programmatically added DebugOverlay")
+		
+	# Programmatically create and add Vignette (dark purple-red edges)
+	vignette_rect = TextureRect.new()
+	vignette_rect.name = "Vignette"
+	vignette_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vignette_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vignette_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	
+	var gradient = Gradient.new()
+	gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CUBIC
+	gradient.set_color(0, Color(0.0, 0.0, 0.0, 0.0))
+	gradient.set_color(1, Color(0.18, 0.02, 0.08, 0.85))
+	
+	var grad_tex = GradientTexture2D.new()
+	grad_tex.gradient = gradient
+	grad_tex.fill = GradientTexture2D.FILL_RADIAL
+	grad_tex.fill_from = Vector2(0.5, 0.5)
+	grad_tex.fill_to = Vector2(1.0, 1.0)
+	
+	vignette_rect.texture = grad_tex
+	vignette_rect.modulate.a = 0.0 # start invisible
+	$Control.add_child(vignette_rect)
+	print("HUD: Programmatically added Vignette")
+	
+	# Programmatically create and add Screen Flash ColorRect
+	flash_rect = ColorRect.new()
+	flash_rect.name = "ScreenFlash"
+	flash_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash_rect.color = Color(1.0, 0.5, 0.75, 0.0) # Pinkish white, initially invisible
+	$Control.add_child(flash_rect)
+	print("HUD: Programmatically added ScreenFlash")
 
 # Thiết lập giá trị ban đầu cho thanh máu và kết nối Signal
 func setup_player(player):
@@ -94,6 +137,13 @@ func _update_sanity_ui(sanity_val: float):
 		var color = Color(0.5, 0.1, 0.8).lerp(Color(0.9, 0.8, 0.2), sanity_val / 100.0)
 		fill_stylebox.bg_color = color
 	sanity_bar.add_theme_stylebox_override("fill", fill_stylebox)
+	
+	# Dynamically update vignette opacity based on sanity (lower sanity -> stronger vignette border)
+	if vignette_rect:
+		var sanity_ratio = sanity_val / 100.0
+		var target_alpha = lerp(0.85, 0.0, sanity_ratio) # range from 0.0 at full sanity to 0.85 at zero sanity
+		var tween = create_tween()
+		tween.tween_property(vignette_rect, "modulate:a", target_alpha, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 # Fade out the screen to black
 func fade_to_black(duration: float = 0.15) -> Tween:
@@ -132,3 +182,9 @@ func _on_key_collected(key_name: String):
 		key_label.text = "Keys: " + ", ".join(player.keys)
 	else:
 		key_label.text = "Keys: None"
+
+func trigger_flash(color: Color = Color(1.0, 0.5, 0.75, 0.25), duration: float = 0.15) -> void:
+	if flash_rect:
+		flash_rect.color = Color(color.r, color.g, color.b, color.a)
+		var tween = create_tween()
+		tween.tween_property(flash_rect, "color:a", 0.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

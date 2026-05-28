@@ -587,7 +587,48 @@ func _on_h_scene_tick() -> void:
 		if qte_indicator and qte_indicator.visible:
 			qte_indicator.shake_amount = 8.0
 			
+		# 1. Trigger Screen Flash (translucent pinkish white)
+		var hud_nodes = get_tree().get_nodes_in_group("hud")
+		for hud in hud_nodes:
+			if hud.has_method("trigger_flash"):
+				hud.trigger_flash(Color(1.0, 0.35, 0.65, 0.3), 0.2)
+				
+		# 2. Spawn Eruption Particles at the midpoint between player and enemy
+		if is_instance_valid(active_enemy):
+			var midpoint = (global_position + active_enemy.global_position) * 0.5
+			midpoint.y -= 10.0 # Center offset
+			_spawn_eruption_particles(midpoint)
+			
 		active_enemy.take_damage(damage_amount, global_position, self)
+
+func _spawn_eruption_particles(pos: Vector2) -> void:
+	var particles = CPUParticles2D.new()
+	particles.name = "EruptionParticles"
+	particles.position = pos
+	particles.emitting = false
+	particles.one_shot = true
+	particles.amount = 25
+	particles.lifetime = 0.6
+	particles.explosiveness = 0.95
+	particles.direction = Vector2.UP
+	particles.spread = 180.0
+	particles.gravity = Vector2(0, 150.0)
+	particles.initial_velocity_min = 60.0
+	particles.initial_velocity_max = 150.0
+	particles.scale_amount_min = 4.0
+	particles.scale_amount_max = 8.0
+	
+	var gradient = Gradient.new()
+	gradient.set_color(0, Color(1.0, 0.4, 0.7, 1.0))
+	gradient.add_point(0.4, Color(1.0, 0.85, 0.95, 1.0))
+	gradient.set_color(1, Color(1.0, 0.3, 0.6, 0.0))
+	particles.color_ramp = gradient
+	
+	get_parent().add_child(particles)
+	particles.emitting = true
+	
+	var timer = get_tree().create_timer(1.0)
+	timer.timeout.connect(particles.queue_free)
 
 func start_rape(enemy: Node2D) -> void:
 	current_state = State.RAPE
