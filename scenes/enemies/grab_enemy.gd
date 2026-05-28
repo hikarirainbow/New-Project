@@ -89,7 +89,13 @@ func _setup_contact_area() -> void:
 	add_child(contact_area)
 
 func _physics_process(delta: float) -> void:
-	if is_being_raped:
+	# Stop normal movement/physics during H-scenes (rape or active QTE grabbed H-scene)
+	var is_in_h_scene = is_being_raped
+	if player_ref and is_instance_valid(player_ref):
+		if player_ref.current_state == Player.State.GRABBED and player_ref._h_scene_active and player_ref.qte_attacker == self:
+			is_in_h_scene = true
+			
+	if is_in_h_scene:
 		velocity = Vector2.ZERO
 		return
 

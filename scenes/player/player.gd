@@ -31,8 +31,8 @@ var is_debuffed = false
 @export var fall_gravity_multiplier: float = 1.5
 @export var jump_cut_multiplier: float = 0.1
 @export var qte_decay_rate: float = 22.5
-@export var qte_trigger_range_x: float = 10.0
-@export var qte_trigger_range_y: float = 20.0
+@export var qte_trigger_range_x: float = 35.0
+@export var qte_trigger_range_y: float = 25.0
 @export var qte_mash_gain: float = 10.0
 @export var qte_upgraded_mash_gain: float = 15.0
 @export var qte_escape_invincibility_duration: float = 0.5
@@ -60,6 +60,7 @@ var qte_indicator: Node2D = null
 var _h_scene_active: bool = false
 var qte_attacker: Node2D = null
 var h_scene_timer: float = 0.0
+var h_scene_direction: float = 1.0
 
 # Custom signal emitted on player defeat
 signal player_defeated
@@ -273,6 +274,22 @@ func handle_grabbed_state(delta: float) -> void:
 		if h_scene_timer >= 5.0:
 			h_scene_timer -= 5.0
 			_on_h_scene_tick()
+			
+		# Smoothly lerp active enemy (qte_attacker) to the correct offset position relative to the player
+		if is_instance_valid(qte_attacker) and qte_attacker.is_alive():
+			var offset_x = 45.0 if "Orc" in qte_attacker.name or qte_attacker.get_script().get_path().contains("orc") else 30.0
+			var target_x = global_position.x + h_scene_direction * offset_x
+			var target_y = global_position.y
+			
+			qte_attacker.global_position.x = lerp(qte_attacker.global_position.x, target_x, 15.0 * delta)
+			qte_attacker.global_position.y = lerp(qte_attacker.global_position.y, target_y, 15.0 * delta)
+			
+			# Align flip directions
+			if has_node("Sprite2D"):
+				$Sprite2D.flip_h = h_scene_direction < 0
+			var enemy_sprite = qte_attacker.get_node_or_null("Sprite2D")
+			if enemy_sprite:
+				enemy_sprite.flip_h = h_scene_direction > 0
 	
 	# Check for close-range enemy H-scene trigger
 	if not _h_scene_active:
@@ -299,6 +316,7 @@ func handle_grabbed_state(delta: float) -> void:
 		if target_enemy:
 			_h_scene_active = true
 			h_scene_timer = 0.0
+			h_scene_direction = 1.0 if target_enemy.global_position.x > global_position.x else -1.0
 			h_scene_triggered.emit(target_enemy)
 			if has_node("Sprite2D"):
 				$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red for H-scene trigger
@@ -545,19 +563,19 @@ func start_rape(enemy: Node2D) -> void:
 	rape_timer = 5.0
 	_h_scene_active = true
 	h_scene_timer = 0.0
+	h_scene_direction = 1.0 if enemy.global_position.x > global_position.x else -1.0
 	
 	if is_instance_valid(enemy):
 		enemy.set("is_being_raped", true)
 		
 		# Set direction
-		var dir = 1.0 if enemy.global_position.x > global_position.x else -1.0
 		if has_node("Sprite2D"):
-			$Sprite2D.flip_h = dir < 0
+			$Sprite2D.flip_h = h_scene_direction < 0
 			$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red
 			
 		var enemy_sprite = enemy.get_node_or_null("Sprite2D")
 		if enemy_sprite:
-			enemy_sprite.flip_h = dir > 0
+			enemy_sprite.flip_h = h_scene_direction > 0
 			
 		print("[RAPE] Started on ", enemy.name, ". Locked both and starting H-scene.")
 		h_scene_triggered.emit(enemy)
@@ -570,33 +588,38 @@ func handle_rape_state(delta: float) -> void:
 		return
 		
 	# Smoothly lerp PLAYER position towards the target position adjacent to the ENEMY
-	var dir = 1.0 if rape_target_enemy.global_position.x > global_position.x else -1.0
 	var offset_x = 45.0 if "Orc" in rape_target_enemy.name or rape_target_enemy.get_script().get_path().contains("orc") else 30.0
 	
-	var target_x = rape_target_enemy.global_position.x - dir * offset_x
+	var target_x = rape_target_enemy.global_position.x - h_scene_direction * offset_x
 	var target_y = rape_target_enemy.global_position.y
 	
 	global_position.x = lerp(global_position.x, target_x, 15.0 * delta)
 	global_position.y = lerp(global_position.y, target_y, 15.0 * delta)
 	
 	if has_node("Sprite2D"):
-		$Sprite2D.flip_h = dir < 0
+		$Sprite2D.flip_h = h_scene_direction < 0
 	var enemy_sprite = rape_target_enemy.get_node_or_null("Sprite2D")
 	if enemy_sprite:
-		enemy_sprite.flip_h = dir > 0
+		enemy_sprite.flip_h = h_scene_direction > 0
 	
 	rape_timer -= delta
 	if rape_timer <= 0.0:
 		_on_h_scene_tick() # Eruption tick (lost max sanity, heal player, damage enemy)
 		
-		# 50% chance to knock the player back physically (does not trigger player QTE)
-		var should_knockback = randf() < 0.5
-		var temp_enemy = rape_target_enemy # Keep reference before exit_rape clears it
-		exit_rape()
-		
-		if should_knockback and is_instance_valid(temp_enemy) and temp_enemy.has_method("is_alive") and temp_enemy.is_alive():
-			apply_knockback(temp_enemy.global_position, 300.0)
-			print("[RAPE] Monster knocked player back on release.")
+		# If the enemy is still alive, continue the rape scene (reset timer to 5.0s)
+		if is_instance_valid(rape_target_enemy) and rape_target_enemy.is_alive():
+			rape_timer = 5.0
+			print("[RAPE] Enemy survived tick. Resetting rape timer for next tick.")
+		else:
+			# If the enemy died, exit rape state and apply a minor knockback
+			var temp_enemy = rape_target_enemy # Keep reference before exit_rape clears it
+			exit_rape()
+			
+			# 50% chance to knock the player back physically if they escape/finish
+			var should_knockback = randf() < 0.5
+			if should_knockback and is_instance_valid(temp_enemy):
+				apply_knockback(temp_enemy.global_position, 300.0)
+				print("[RAPE] Monster knocked player back on release.")
 
 func exit_rape() -> void:
 	current_state = State.MOVE
