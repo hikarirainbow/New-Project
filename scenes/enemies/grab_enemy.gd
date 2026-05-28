@@ -25,6 +25,7 @@ var direction: int = 1
 var player_ref: Player = null
 var contact_area: Area2D = null
 var is_being_raped: bool = false
+var eruption_count: int = 0
 
 # Attack Settings
 @export_group("Attack Settings")

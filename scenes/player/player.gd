@@ -240,6 +240,19 @@ func handle_move_state(delta: float) -> void:
 
 # Logic loop for grabbed state (QTE active)
 func handle_grabbed_state(delta: float) -> void:
+	if qte_attacker and (not is_instance_valid(qte_attacker) or not qte_attacker.has_method("is_alive") or not qte_attacker.is_alive()):
+		current_state = State.MOVE
+		qte_attacker = null
+		h_scene_timer = 0.0
+		if qte_indicator:
+			qte_indicator.visible = false
+		is_invincible = true
+		invincibility_timer = qte_escape_invincibility_duration
+		if has_node("Sprite2D"):
+			$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		print("[QTE] Attacker died, exiting grabbed state.")
+		return
+
 	# Apply standard gravity in grabbed state
 	if not is_on_floor():
 		var active_gravity = gravity * fall_gravity_multiplier if velocity.y > 0 else gravity
@@ -501,6 +514,31 @@ func _on_h_scene_tick() -> void:
 		health_changed.emit(current_health)
 		print("[H-SCENE TICK] Recovered ", heal_amount, " HP (25% of max health). Current HP: ", current_health)
 
+	# Determine active H-scene enemy (depending on state)
+	var active_enemy: Node2D = null
+	if current_state == State.GRABBED:
+		active_enemy = qte_attacker
+	elif current_state == State.RAPE:
+		active_enemy = rape_target_enemy
+		
+	# Deal damage to the enemy: 50% of current HP for ticks 1 and 2, fatal (100%) on tick 3
+	if is_instance_valid(active_enemy) and active_enemy.has_method("take_damage") and active_enemy.has_method("is_alive") and active_enemy.is_alive():
+		var count = active_enemy.get("eruption_count")
+		if count == null:
+			count = 0
+		count += 1
+		active_enemy.set("eruption_count", count)
+		
+		var damage_amount: int
+		if count >= 3:
+			damage_amount = active_enemy.current_health
+			print("[H-SCENE TICK] Eruption tick ", count, " (3rd tick). Dealing fatal damage of ", damage_amount, " to ", active_enemy.name)
+		else:
+			damage_amount = int(round(active_enemy.current_health * 0.5))
+			print("[H-SCENE TICK] Eruption tick ", count, ". Dealt ", damage_amount, " damage to ", active_enemy.name, " (50% current HP).")
+			
+		active_enemy.take_damage(damage_amount, global_position, self)
+
 func start_rape(enemy: Node2D) -> void:
 	current_state = State.RAPE
 	rape_target_enemy = enemy
@@ -549,12 +587,7 @@ func handle_rape_state(delta: float) -> void:
 	
 	rape_timer -= delta
 	if rape_timer <= 0.0:
-		_on_h_scene_tick() # Eruption tick (lost max sanity, heal player)
-		
-		# Deal 50% of CURRENT health damage to the enemy
-		var damage_amount = int(round(rape_target_enemy.current_health * 0.5))
-		rape_target_enemy.take_damage(damage_amount, global_position, self)
-		print("[RAPE] Completed. Dealt ", damage_amount, " damage to ", rape_target_enemy.name, " (50% current HP).")
+		_on_h_scene_tick() # Eruption tick (lost max sanity, heal player, damage enemy)
 		
 		# 50% chance to knock the player back physically (does not trigger player QTE)
 		var should_knockback = randf() < 0.5
