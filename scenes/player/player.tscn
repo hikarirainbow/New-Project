@@ -9,6 +9,9 @@
 [ext_resource type="Script" uid="uid://cdstvdrs5dty6" path="res://scenes/player/components/animation_component.gd" id="7_animation_component_gd"]
 [ext_resource type="Script" uid="uid://bnlt4hysc8elc" path="res://scenes/player/components/corruption_component.gd" id="8_corruption_component_gd"]
 [ext_resource type="Script" uid="uid://dr3oe3obojeu0" path="res://scenes/player/components/skill_component.gd" id="9_skill_component_gd"]
+[ext_resource type="Script" path="res://scenes/player/components/camera_component.gd" id="10_camera_component_gd"]
+[ext_resource type="Script" path="res://scenes/player/components/h_scene_component.gd" id="11_h_scene_component_gd"]
+[ext_resource type="Script" path="res://scenes/player/components/inventory_component.gd" id="12_inventory_component_gd"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(28, 56)
@@ -130,3 +133,12 @@ script = ExtResource("8_corruption_component_gd")
 
 [node name="SkillComponent" type="Node2D" parent="." unique_id=2096865523]
 script = ExtResource("9_skill_component_gd")
+
+[node name="CameraComponent" type="Node" parent="."]
+script = ExtResource("10_camera_component_gd")
+
+[node name="HSceneComponent" type="Node" parent="."]
+script = ExtResource("11_h_scene_component_gd")
+
+[node name="InventoryComponent" type="Node" parent="."]
+script = ExtResource("12_inventory_component_gd")

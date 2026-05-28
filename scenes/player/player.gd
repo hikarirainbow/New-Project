@@ -10,9 +10,6 @@ const ACCELERATION    = 1000.0
 enum State { MOVE, GRABBED, DEFEATED, DASH, CLIMB, RAPE }
 var current_state = State.MOVE
 
-var rape_target_enemy: Node2D = null
-var rape_timer: float = 0.0
-
 # Player-specific debuff status
 var is_debuffed = false
 
@@ -25,17 +22,8 @@ var is_debuffed = false
 
 @export_group("Struggling & QTE")
 @export var qte_indicator_offset: Vector2 = Vector2(0, -82)
-@export var default_camera_zoom: Vector2 = Vector2(2.4, 2.4)
-@export var camera_look_pan_distance: float = 200.0
-@export var camera_look_pan_speed: float = 5.0
 @export var fall_gravity_multiplier: float = 1.5
 @export var jump_cut_multiplier: float = 0.1
-@export var qte_decay_rate: float = 22.5
-@export var qte_trigger_range_x: float = 35.0
-@export var qte_trigger_range_y: float = 25.0
-@export var qte_mash_gain: float = 10.0
-@export var qte_upgraded_mash_gain: float = 15.0
-@export var qte_escape_invincibility_duration: float = 0.5
 
 @export_group("Health Values")
 @export var debuffed_max_health: int = 80
@@ -51,20 +39,110 @@ var is_at_checkpoint: bool = false
 var has_double_jumped: bool = false
 var attract_cast_timer: float = 0.0
 
-# Quick Time Event (QTE) tracking variables
-var qte_progress: float = 0.0
-var qte_target: float = 100.0
-var last_qte_key: String = ""
 var _force_triple_knockback: bool = false
 var qte_indicator: Node2D = null
-var _h_scene_active: bool = false
-var qte_attacker: Node2D = null
-var h_scene_timer: float = 0.0
-var h_scene_direction: float = 1.0
-var h_scene_cooldown: float = 0.0
-var camera_look_offset_y: float = 0.0
-var camera_shake_timer: float = 0.0
-var camera_shake_intensity: float = 0.0
+
+# Backward compatibility properties proxied to components
+var keys: Array[String]:
+	get:
+		if inventory_component:
+			return inventory_component.keys
+		var empty: Array[String] = []
+		return empty
+	set(val):
+		if inventory_component:
+			inventory_component.keys = val
+
+var _h_scene_active: bool:
+	get:
+		return h_scene_component.is_active if h_scene_component else false
+	set(val):
+		if h_scene_component:
+			h_scene_component.is_active = val
+
+var qte_attacker: Node2D:
+	get:
+		return h_scene_component.qte_attacker if h_scene_component else null
+	set(val):
+		if h_scene_component:
+			h_scene_component.qte_attacker = val
+
+var qte_progress: float:
+	get:
+		return h_scene_component.qte_progress if h_scene_component else 0.0
+	set(val):
+		if h_scene_component:
+			h_scene_component.qte_progress = val
+
+var qte_target: float:
+	get:
+		return h_scene_component.qte_target if h_scene_component else 100.0
+	set(val):
+		if h_scene_component:
+			h_scene_component.qte_target = val
+
+var last_qte_key: String:
+	get:
+		return h_scene_component.last_qte_key if h_scene_component else ""
+	set(val):
+		if h_scene_component:
+			h_scene_component.last_qte_key = val
+
+var rape_target_enemy: Node2D:
+	get:
+		return h_scene_component.rape_target_enemy if h_scene_component else null
+	set(val):
+		if h_scene_component:
+			h_scene_component.rape_target_enemy = val
+
+var rape_timer: float:
+	get:
+		return h_scene_component.rape_timer if h_scene_component else 0.0
+	set(val):
+		if h_scene_component:
+			h_scene_component.rape_timer = val
+
+var h_scene_timer: float:
+	get:
+		return h_scene_component.h_scene_timer if h_scene_component else 0.0
+	set(val):
+		if h_scene_component:
+			h_scene_component.h_scene_timer = val
+
+var h_scene_direction: float:
+	get:
+		return h_scene_component.h_scene_direction if h_scene_component else 1.0
+	set(val):
+		if h_scene_component:
+			h_scene_component.h_scene_direction = val
+
+var h_scene_cooldown: float:
+	get:
+		return h_scene_component.h_scene_cooldown if h_scene_component else 0.0
+	set(val):
+		if h_scene_component:
+			h_scene_component.h_scene_cooldown = val
+
+var camera_look_offset_y: float:
+	get:
+		return camera_component.camera_look_offset_y if camera_component else 0.0
+	set(val):
+		if camera_component:
+			camera_component.camera_look_offset_y = val
+
+var camera_shake_timer: float:
+	get:
+		return camera_component.camera_shake_timer if camera_component else 0.0
+	set(val):
+		if camera_component:
+			camera_component.camera_shake_timer = val
+
+var camera_shake_intensity: float:
+	get:
+		return camera_component.camera_shake_intensity if camera_component else 0.0
+	set(val):
+		if camera_component:
+			camera_component.camera_shake_intensity = val
 
 # Custom signal emitted on player defeat
 signal player_defeated
@@ -73,8 +151,6 @@ signal key_collected(key_name: String)
 signal h_scene_triggered(enemy_node: Node2D)
 signal h_scene_tick(new_max_sanity: float)
 
-# Collected keys storage
-var keys: Array[String] = []
 var spawn_point: Vector2
 
 # Cached child component references
@@ -85,11 +161,14 @@ var spawn_point: Vector2
 @onready var corruption_component = $CorruptionComponent
 @onready var skill_component = $SkillComponent
 
+# Newly registered components
+@onready var camera_component = $CameraComponent
+@onready var h_scene_component = $HSceneComponent
+@onready var inventory_component = $InventoryComponent
+
 func _ready() -> void:
 	add_to_group("player")
 	spawn_point = global_position
-	if has_node("Camera2D"): 
-		$Camera2D.zoom = default_camera_zoom
 	# Capture mouse mode on game start
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	
@@ -117,17 +196,6 @@ func _physics_process(delta: float) -> void:
 	if attract_cast_timer > 0.0:
 		attract_cast_timer -= delta
 		
-	if h_scene_cooldown > 0.0:
-		h_scene_cooldown -= delta
-		
-	# Smoothly lerp camera zoom based on active H-scene
-	var camera = get_node_or_null("Camera2D")
-	if camera:
-		var target_zoom = default_camera_zoom
-		if _h_scene_active:
-			target_zoom = Vector2(5.0, 5.0)
-		camera.zoom = camera.zoom.lerp(target_zoom, 5.0 * delta)
-		
 	# Process invincibility timer and sprite flashing effect
 	if invincibility_timer > 0.0:
 		invincibility_timer -= delta
@@ -141,18 +209,15 @@ func _physics_process(delta: float) -> void:
 	match current_state:
 		State.MOVE:
 			handle_move_state(delta)
-		State.GRABBED:
-			handle_grabbed_state(delta)
+		State.GRABBED, State.RAPE:
+			# Handled by HSceneComponent's physics process
+			pass
 		State.DEFEATED:
 			handle_defeated_state(delta)
 		State.DASH:
 			dash_component.process_dash(delta)
 		State.CLIMB:
 			climb_component.process_climb(delta)
-		State.RAPE:
-			handle_rape_state(delta)
-			
-	_update_camera_look(delta)
 
 # Logic loop for free movement state
 func handle_move_state(delta: float) -> void:
@@ -255,173 +320,19 @@ func handle_move_state(delta: float) -> void:
 
 	move_and_slide()
 
-# Logic loop for grabbed state (QTE active)
-func handle_grabbed_state(delta: float) -> void:
-	if qte_attacker and (not is_instance_valid(qte_attacker) or not qte_attacker.has_method("is_alive") or not qte_attacker.is_alive()):
-		current_state = State.MOVE
-		qte_attacker = null
-		h_scene_timer = 0.0
-		h_scene_cooldown = 2.0
-		_h_scene_active = false
-		if qte_indicator:
-			qte_indicator.visible = false
-		is_invincible = true
-		invincibility_timer = qte_escape_invincibility_duration
-		if has_node("Sprite2D"):
-			$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
-		print("[QTE] Attacker died, exiting grabbed state.")
-		return
-
-	# Apply standard gravity in grabbed state
-	if not is_on_floor():
-		var active_gravity = gravity * fall_gravity_multiplier if velocity.y > 0 else gravity
-		velocity.y += active_gravity * delta
-
-	# Decay horizontal velocity via friction
-	velocity.x = move_toward(velocity.x, 0, friction * delta)
-	
-	move_and_slide()
-	
-	# QTE progress decays linearly over time scaled by the sanity/corruption component decay multiplier
-	var decay_multiplier = corruption_component.get_qte_decay_multiplier() if corruption_component else 2.0
-	qte_progress = max(0.0, qte_progress - delta * qte_decay_rate * decay_multiplier)
-	
-	# H-Scene processing
-	if _h_scene_active:
-		h_scene_timer += delta
-		if h_scene_timer >= 5.0:
-			h_scene_timer -= 5.0
-			_on_h_scene_tick()
-			
-		# Smoothly lerp active enemy (qte_attacker) to the correct offset position relative to the player
-		if is_instance_valid(qte_attacker) and qte_attacker.is_alive():
-			var offset_x = 45.0 if "Orc" in qte_attacker.name or qte_attacker.get_script().get_path().contains("orc") else 30.0
-			var target_x = global_position.x + h_scene_direction * offset_x
-			var target_y = global_position.y
-			
-			qte_attacker.global_position.x = lerp(qte_attacker.global_position.x, target_x, 15.0 * delta)
-			qte_attacker.global_position.y = lerp(qte_attacker.global_position.y, target_y, 15.0 * delta)
-			
-			# Align flip directions
-			if has_node("Sprite2D"):
-				$Sprite2D.flip_h = h_scene_direction < 0
-			var enemy_sprite = qte_attacker.get_node_or_null("Sprite2D")
-			if enemy_sprite:
-				enemy_sprite.flip_h = h_scene_direction > 0
-	
-	# Check for close-range enemy H-scene trigger
-	if not _h_scene_active:
-		var enemies = get_tree().get_nodes_in_group("enemies")
-		var target_enemy: Node2D = null
-		
-		# 1. First check if the prioritized QTE attacker is within range
-		if is_instance_valid(qte_attacker) and qte_attacker.has_method("is_alive") and qte_attacker.is_alive():
-			var dx = abs(global_position.x - qte_attacker.global_position.x)
-			var dy = abs(global_position.y - qte_attacker.global_position.y)
-			if dx <= qte_trigger_range_x and dy <= qte_trigger_range_y:
-				target_enemy = qte_attacker
-				
-		# 2. If not, fallback to other close-range enemies
-		if not target_enemy:
-			for enemy in enemies:
-				if is_instance_valid(enemy) and enemy.has_method("is_alive") and enemy.is_alive():
-					var dx = abs(global_position.x - enemy.global_position.x)
-					var dy = abs(global_position.y - enemy.global_position.y)
-					if dx <= qte_trigger_range_x and dy <= qte_trigger_range_y:
-						target_enemy = enemy
-						break
-						
-		if target_enemy:
-			_h_scene_active = true
-			h_scene_timer = 0.0
-			h_scene_direction = 1.0 if target_enemy.global_position.x > global_position.x else -1.0
-			h_scene_triggered.emit(target_enemy)
-			if has_node("Sprite2D"):
-				$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red for H-scene trigger
-			print("H-Scene Triggered with prioritized enemy: ", target_enemy.name)
-
-	# Calculate target input key instruction for HUD arrows
-	var next_key := "any"
-	if last_qte_key == "left":
-		next_key = "right"
-	elif last_qte_key == "right":
-		next_key = "left"
-		
-	if qte_indicator:
-		qte_indicator.set_qte_state(qte_progress, qte_target, next_key)
-		
-	# Check for alternation inputs (Left/Right inputs)
-	var left_pressed := Input.is_action_just_pressed("move_left")
-	var right_pressed := Input.is_action_just_pressed("move_right")
-	
-	if left_pressed or right_pressed:
-		var valid_input := false
-		if left_pressed and last_qte_key != "left":
-			last_qte_key = "left"
-			valid_input = true
-		elif right_pressed and last_qte_key != "right":
-			last_qte_key = "right"
-			valid_input = true
-			
-		if valid_input:
-			var mash_gain := qte_mash_gain
-			if skill_component and skill_component.is_skill_unlocked("H"):
-				mash_gain = qte_upgraded_mash_gain # stronger struggling power
-			qte_progress = min(qte_target, qte_progress + mash_gain)
-			
-			var next_after_press := "any"
-			if last_qte_key == "left":
-				next_after_press = "right"
-			elif last_qte_key == "right":
-				next_after_press = "left"
-				
-			if qte_indicator:
-				qte_indicator.set_qte_state(qte_progress, qte_target, next_after_press, 8.0)
-				
-	# Successful QTE exit
-	if qte_progress >= qte_target:
-		current_state = State.MOVE
-		qte_attacker = null
-		h_scene_timer = 0.0
-		h_scene_cooldown = 2.0
-		_h_scene_active = false
-		if qte_indicator:
-			qte_indicator.visible = false
-		# Grant player invincibility buffer upon escape
-		is_invincible = true
-		invincibility_timer = qte_escape_invincibility_duration
-		if has_node("Sprite2D"):
-			$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
-
-# Initialize QTE sequence
+# QTE delegation
 func start_qte() -> void:
-	current_state = State.GRABBED
-	qte_progress = 0.0
-	last_qte_key = ""
-	_h_scene_active = false
-	h_scene_timer = 0.0
-	if has_node("Sprite2D"):
-		$Sprite2D.modulate = Color(1.0, 1.0, 0.0, 1.0) # Modulate yellow for testing visual state identification
-	if qte_indicator:
-		qte_indicator.visible = true
-		qte_indicator.set_qte_state(0.0, qte_target, "any")
-		
-	# Attract the QTE attacker at full speed (no speed reduction, longer duration)
-	if is_instance_valid(qte_attacker) and qte_attacker.has_method("is_alive") and qte_attacker.is_alive():
-		var existing = qte_attacker.get_node_or_null("AttractEffectComponent")
-		if existing:
-			existing.speed_multiplier = 1.0
-			existing.duration = 8.0
-			existing.refresh()
-		else:
-			var effect_script = load("res://scenes/enemies/components/attract_effect_component.gd")
-			var effect = Node.new()
-			effect.name = "AttractEffectComponent"
-			effect.set_script(effect_script)
-			effect.set("speed_multiplier", 1.0)
-			effect.set("duration", 8.0)
-			qte_attacker.add_child(effect)
-		print("[QTE] Attracted attacker: ", qte_attacker.name, " at full speed.")
+	if h_scene_component:
+		h_scene_component.start_qte(qte_attacker)
+
+# Rape state delegation
+func start_rape(enemy: Node2D) -> void:
+	if h_scene_component:
+		h_scene_component.start_rape(enemy)
+
+func exit_rape() -> void:
+	if h_scene_component:
+		h_scene_component.exit_rape()
 
 # Override Actor.apply_knockback to support scaled 3x force during grabbed/QTE triggers
 func apply_knockback(source_position: Vector2, force: float = 250.0) -> void:
@@ -545,167 +456,6 @@ func remove_debuff() -> void:
 		corruption_component.max_sanity = 100.0
 		corruption_component.add_sanity(0.0) # Refresh sanity HUD/modulate
 
-func _on_h_scene_tick() -> void:
-	if corruption_component:
-		corruption_component.reduce_max_sanity(5.0)
-		h_scene_tick.emit(corruption_component.max_sanity)
-		print("[H-SCENE TICK] Lost 5 max sanity. Current max sanity: ", corruption_component.max_sanity)
-	
-	# Heal 25% of max health on tick
-	var heal_amount := int(round(max_health * 0.25))
-	if heal_amount > 0:
-		current_health = min(max_health, current_health + heal_amount)
-		health_changed.emit(current_health)
-		print("[H-SCENE TICK] Recovered ", heal_amount, " HP (25% of max health). Current HP: ", current_health)
-
-	# Determine active H-scene enemy (depending on state)
-	var active_enemy: Node2D = null
-	if current_state == State.GRABBED:
-		active_enemy = qte_attacker
-	elif current_state == State.RAPE:
-		active_enemy = rape_target_enemy
-		
-	# Deal damage to the enemy: 50% of current HP for ticks 1 and 2, fatal (100%) on tick 3
-	if is_instance_valid(active_enemy) and active_enemy.has_method("take_damage") and active_enemy.has_method("is_alive") and active_enemy.is_alive():
-		var count = active_enemy.get("eruption_count")
-		if count == null:
-			count = 0
-		count += 1
-		active_enemy.set("eruption_count", count)
-		
-		var damage_amount: int
-		if count >= 3:
-			damage_amount = active_enemy.current_health
-			print("[H-SCENE TICK] Eruption tick ", count, " (3rd tick). Dealing fatal damage of ", damage_amount, " to ", active_enemy.name)
-		else:
-			damage_amount = int(round(active_enemy.current_health * 0.5))
-			print("[H-SCENE TICK] Eruption tick ", count, ". Dealt ", damage_amount, " damage to ", active_enemy.name, " (50% current HP).")
-			
-		# Eruption screen shake for 0.8 seconds with intensity 8.0 (using 3-phase envelope)
-		camera_shake_timer = 0.8
-		camera_shake_intensity = 8.0
-		if qte_indicator and qte_indicator.visible:
-			qte_indicator.shake_amount = 8.0
-			
-		# 1. Trigger Screen Flash (translucent pinkish white)
-		var hud_nodes = get_tree().get_nodes_in_group("hud")
-		for hud in hud_nodes:
-			if hud.has_method("trigger_flash"):
-				hud.trigger_flash(Color(1.0, 0.35, 0.65, 0.3), 0.2)
-				
-		# 2. Spawn Eruption Particles at the midpoint between player and enemy
-		if is_instance_valid(active_enemy):
-			var midpoint = (global_position + active_enemy.global_position) * 0.5
-			midpoint.y -= 10.0 # Center offset
-			_spawn_eruption_particles(midpoint)
-			
-		active_enemy.take_damage(damage_amount, global_position, self)
-
-func _spawn_eruption_particles(pos: Vector2) -> void:
-	var particles = CPUParticles2D.new()
-	particles.name = "EruptionParticles"
-	particles.position = pos
-	particles.emitting = false
-	particles.one_shot = true
-	particles.amount = 25
-	particles.lifetime = 0.6
-	particles.explosiveness = 0.95
-	particles.direction = Vector2.UP
-	particles.spread = 180.0
-	particles.gravity = Vector2(0, 150.0)
-	particles.initial_velocity_min = 60.0
-	particles.initial_velocity_max = 150.0
-	particles.scale_amount_min = 4.0
-	particles.scale_amount_max = 8.0
-	
-	var gradient = Gradient.new()
-	gradient.set_color(0, Color(1.0, 0.4, 0.7, 1.0))
-	gradient.add_point(0.4, Color(1.0, 0.85, 0.95, 1.0))
-	gradient.set_color(1, Color(1.0, 0.3, 0.6, 0.0))
-	particles.color_ramp = gradient
-	
-	get_parent().add_child(particles)
-	particles.emitting = true
-	
-	var timer = get_tree().create_timer(1.0)
-	timer.timeout.connect(particles.queue_free)
-
-func start_rape(enemy: Node2D) -> void:
-	current_state = State.RAPE
-	rape_target_enemy = enemy
-	rape_timer = 5.0
-	_h_scene_active = true
-	h_scene_timer = 0.0
-	h_scene_direction = 1.0 if enemy.global_position.x > global_position.x else -1.0
-	
-	if is_instance_valid(enemy):
-		enemy.set("is_being_raped", true)
-		
-		# Set direction
-		if has_node("Sprite2D"):
-			$Sprite2D.flip_h = h_scene_direction < 0
-			$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0) # Turn red
-			
-		var enemy_sprite = enemy.get_node_or_null("Sprite2D")
-		if enemy_sprite:
-			enemy_sprite.flip_h = h_scene_direction > 0
-			
-		print("[RAPE] Started on ", enemy.name, ". Locked both and starting H-scene.")
-		h_scene_triggered.emit(enemy)
-
-func handle_rape_state(delta: float) -> void:
-	velocity = Vector2.ZERO
-	
-	if not is_instance_valid(rape_target_enemy) or not rape_target_enemy.is_alive():
-		exit_rape()
-		return
-		
-	# Smoothly lerp PLAYER position towards the target position adjacent to the ENEMY
-	var offset_x = 45.0 if "Orc" in rape_target_enemy.name or rape_target_enemy.get_script().get_path().contains("orc") else 30.0
-	
-	var target_x = rape_target_enemy.global_position.x - h_scene_direction * offset_x
-	var target_y = rape_target_enemy.global_position.y
-	
-	global_position.x = lerp(global_position.x, target_x, 15.0 * delta)
-	global_position.y = lerp(global_position.y, target_y, 15.0 * delta)
-	
-	if has_node("Sprite2D"):
-		$Sprite2D.flip_h = h_scene_direction < 0
-	var enemy_sprite = rape_target_enemy.get_node_or_null("Sprite2D")
-	if enemy_sprite:
-		enemy_sprite.flip_h = h_scene_direction > 0
-	
-	rape_timer -= delta
-	if rape_timer <= 0.0:
-		_on_h_scene_tick() # Eruption tick (lost max sanity, heal player, damage enemy)
-		
-		# If the enemy is still alive, continue the rape scene (reset timer to 5.0s)
-		if is_instance_valid(rape_target_enemy) and rape_target_enemy.is_alive():
-			rape_timer = 5.0
-			print("[RAPE] Enemy survived tick. Resetting rape timer for next tick.")
-		else:
-			# If the enemy died, exit rape state and apply a minor knockback
-			var temp_enemy = rape_target_enemy # Keep reference before exit_rape clears it
-			exit_rape()
-			
-			# 50% chance to knock the player back physically if they escape/finish
-			var should_knockback = randf() < 0.5
-			if should_knockback and is_instance_valid(temp_enemy):
-				apply_knockback(temp_enemy.global_position, 300.0)
-				print("[RAPE] Monster knocked player back on release.")
-
-func exit_rape() -> void:
-	current_state = State.MOVE
-	_h_scene_active = false
-	h_scene_timer = 0.0
-	h_scene_cooldown = 2.0
-	if is_instance_valid(rape_target_enemy):
-		rape_target_enemy.set("is_being_raped", false)
-	rape_target_enemy = null
-	if has_node("Sprite2D"):
-		$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
-	print("[RAPE] Exited rape H-scene.")
-
 # Respawn player at original spawn point coordinates
 func respawn() -> void:
 	global_position = spawn_point
@@ -713,14 +463,14 @@ func respawn() -> void:
 	knockback_timer = 0.0
 	invincibility_timer = 0.0
 	is_invincible = false
-	qte_attacker = null
-	if has_node("Sprite2D"):
-		$Sprite2D.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	current_health += 9999
 	apply_debuff()
 	current_state = State.MOVE
 	dash_component.reset()
 	
+	if h_scene_component:
+		h_scene_component.reset()
+		
 	# Hide above-head QTE indicators if active on death
 	if qte_indicator:
 		qte_indicator.visible = false
@@ -729,11 +479,10 @@ func respawn() -> void:
 func upgrade_dash_cooldown() -> void:
 	dash_component.upgrade_cooldown()
 
-# Key collection callback
+# Key collection callback (proxies to InventoryComponent)
 func collect_key(key_name: String) -> void:
-	keys.append(key_name)
-	key_collected.emit(key_name)
-	print("Key collected: ", key_name, " | Total keys: ", keys)
+	if inventory_component:
+		inventory_component.collect_key(key_name)
 
 # Trigger hit stop (time freeze) on successful impact
 func trigger_hit_stop(duration: float = 0.08, time_scale: float = 0.05) -> void:
@@ -741,56 +490,10 @@ func trigger_hit_stop(duration: float = 0.08, time_scale: float = 0.05) -> void:
 	await get_tree().create_timer(duration, true, false, true).timeout
 	Engine.time_scale = 1.0
 
-# Shake camera opposite to slash direction
+# Camera helper functions proxied to CameraComponent
 func shake_camera(direction_x: float, intensity: float = 8.0, duration: float = 0.15) -> void:
-	var camera = get_node_or_null("Camera2D")
-	if camera:
-		camera.offset.x = -direction_x * intensity
-		var tween = create_tween().set_ignore_time_scale(true)
-		tween.tween_property(camera, "offset:x", 0.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if camera_component:
+		camera_component.shake_camera(direction_x, intensity, duration)
 
-# Update camera look offset based on player input (look_up / look_down)
-func _update_camera_look(delta: float) -> void:
-	var camera = get_node_or_null("Camera2D")
-	if not camera:
-		return
-		
-	var target_offset_y = 0.0
-	if current_state == State.MOVE:
-		if not attack_component.is_attacking():
-			if Input.is_action_pressed("look_up"):
-				target_offset_y -= camera_look_pan_distance
-			if Input.is_action_pressed("look_down"):
-				target_offset_y += camera_look_pan_distance
-				
-	camera_look_offset_y = lerp(camera_look_offset_y, target_offset_y, camera_look_pan_speed * delta)
-	
-	# Apply eruption screen shake offset if active (3-phase envelope: 0.2s ramp-up, 0.4s peak, 0.2s decay)
-	if camera_shake_timer > 0.0:
-		camera_shake_timer -= delta
-		var elapsed = 0.8 - camera_shake_timer
-		var multiplier = 0.0
-		if elapsed < 0.2:
-			multiplier = elapsed / 0.2
-		elif elapsed < 0.6:
-			multiplier = 1.0
-		elif elapsed < 0.8:
-			multiplier = (0.8 - elapsed) / 0.2
-		else:
-			multiplier = 0.0
-			
-		var current_intensity = camera_shake_intensity * multiplier
-		var shake_offset = Vector2(
-			randf_range(-current_intensity, current_intensity),
-			randf_range(-current_intensity, current_intensity)
-		)
-		camera.offset = Vector2(shake_offset.x, camera_look_offset_y + shake_offset.y)
-	else:
-		camera.offset = Vector2(camera.offset.x, camera_look_offset_y)
-
-# Apply recoil pushback on melee hit
-func apply_melee_recoil(direction_x: float, force: float = 160.0) -> void:
-	# Recoil pushback in opposite direction of slash
-	velocity.x = -direction_x * force
-	recoil_timer = melee_recoil_duration
-	move_and_slide()
+func is_h_scene_active() -> bool:
+	return h_scene_component.is_active if h_scene_component else false
