@@ -61,6 +61,7 @@ var _h_scene_active: bool = false
 var qte_attacker: Node2D = null
 var h_scene_timer: float = 0.0
 var h_scene_direction: float = 1.0
+var h_scene_cooldown: float = 0.0
 
 # Custom signal emitted on player defeat
 signal player_defeated
@@ -113,6 +114,9 @@ func _physics_process(delta: float) -> void:
 	if attract_cast_timer > 0.0:
 		attract_cast_timer -= delta
 		
+	if h_scene_cooldown > 0.0:
+		h_scene_cooldown -= delta
+		
 	# Process invincibility timer and sprite flashing effect
 	if invincibility_timer > 0.0:
 		invincibility_timer -= delta
@@ -151,18 +155,19 @@ func handle_move_state(delta: float) -> void:
 		move_and_slide()
 		return
 
-	# Check for special H-scene (rape) trigger
-	if Input.is_action_just_pressed("skill_rape"):
+	# Check for special H-scene (rape) trigger (only when player is grounded and cooldown is inactive)
+	if Input.is_action_just_pressed("skill_rape") and h_scene_cooldown <= 0.0 and is_on_floor():
 		var enemies = get_tree().get_nodes_in_group("enemies")
 		var closest_enemy: Node2D = null
 		var min_dist = 150.0 # Max trigger range
 		for enemy in enemies:
 			if is_instance_valid(enemy) and enemy.has_method("is_alive") and enemy.is_alive():
 				if enemy.get("current_state") == 3: # 3 = State.ATTRACTED
-					var dist = global_position.distance_to(enemy.global_position)
-					if dist < min_dist:
-						min_dist = dist
-						closest_enemy = enemy
+					if enemy.has_method("is_on_floor") and enemy.is_on_floor():
+						var dist = global_position.distance_to(enemy.global_position)
+						if dist < min_dist:
+							min_dist = dist
+							closest_enemy = enemy
 		if closest_enemy:
 			start_rape(closest_enemy)
 			return
@@ -245,6 +250,7 @@ func handle_grabbed_state(delta: float) -> void:
 		current_state = State.MOVE
 		qte_attacker = null
 		h_scene_timer = 0.0
+		h_scene_cooldown = 2.0
 		if qte_indicator:
 			qte_indicator.visible = false
 		is_invincible = true
@@ -365,6 +371,7 @@ func handle_grabbed_state(delta: float) -> void:
 		current_state = State.MOVE
 		qte_attacker = null
 		h_scene_timer = 0.0
+		h_scene_cooldown = 2.0
 		if qte_indicator:
 			qte_indicator.visible = false
 		# Grant player invincibility buffer upon escape
@@ -450,7 +457,13 @@ func take_damage(amount: int, source_position: Vector2 = Vector2.ZERO, attacker:
 	
 	var is_below_half_hp = current_health < max_health * 0.5
 	var would_survive = (current_health - final_amount) > 0
-	var should_trigger_qte = is_below_half_hp and would_survive
+	
+	var is_grounded = is_on_floor()
+	var is_attacker_grounded = false
+	if is_instance_valid(attacker) and attacker is CharacterBody2D:
+		is_attacker_grounded = attacker.is_on_floor()
+		
+	var should_trigger_qte = is_below_half_hp and would_survive and h_scene_cooldown <= 0.0 and is_grounded and is_attacker_grounded
 	
 	if should_trigger_qte:
 		_force_triple_knockback = true
@@ -625,6 +638,7 @@ func exit_rape() -> void:
 	current_state = State.MOVE
 	_h_scene_active = false
 	h_scene_timer = 0.0
+	h_scene_cooldown = 2.0
 	if is_instance_valid(rape_target_enemy):
 		rape_target_enemy.set("is_being_raped", false)
 	rape_target_enemy = null
