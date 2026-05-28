@@ -581,11 +581,11 @@ func _on_h_scene_tick() -> void:
 			damage_amount = int(round(active_enemy.current_health * 0.5))
 			print("[H-SCENE TICK] Eruption tick ", count, ". Dealt ", damage_amount, " damage to ", active_enemy.name, " (50% current HP).")
 			
-		# Eruption screen shake for 0.8 seconds with intensity 10.0 (using 3-phase envelope)
+		# Eruption screen shake for 0.8 seconds with intensity 8.0 (using 3-phase envelope)
 		camera_shake_timer = 0.8
-		camera_shake_intensity = 10.0
+		camera_shake_intensity = 8.0
 		if qte_indicator and qte_indicator.visible:
-			qte_indicator.shake_amount = 10.0
+			qte_indicator.shake_amount = 8.0
 			
 		active_enemy.take_damage(damage_amount, global_position, self)
 
